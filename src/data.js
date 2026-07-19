@@ -159,17 +159,22 @@ export const SIZES = ['S', 'M', 'L', 'XL', 'XXL']
 /* ── Конструктор ── */
 export const CUSTOM_PRICE = 15900
 
-// Цвета ткани, доступные в конструкторе: [заливка, цвет текста по умолчанию]
+// Только белая и чёрная ткань — как в настоящей печати.
 export const CUSTOM_COLORS = [
-  { id: 'white', fabric: '#f0efec', ink: '#111111' },
-  { id: 'black', fabric: '#141414', ink: '#f5f0e8' },
-  { id: 'acid', fabric: '#ffe600', ink: '#141414' },
-  { id: 'pink', fabric: '#ff2e88', ink: '#ffffff' },
-  { id: 'green', fabric: '#2d6a4f', ink: '#f5f0e8' },
-  { id: 'blue', fabric: '#0a1f3d', ink: '#f5f0e8' },
+  { id: 'white', fabric: '#f0efec', ink: '#141414' },
+  { id: 'black', fabric: '#141414', ink: '#ffffff' },
 ]
 
-export const INK_COLORS = ['#141414', '#f5f0e8', '#ffe600', '#ff2e88', '#00e5a0', '#e63946', '#4f8cff']
+export const INK_COLORS = ['#141414', '#ffffff']
+
+// Системные шрифты + два уже подключённых: ничего лишнего не качаем.
+export const FONTS = [
+  { id: 'display', label: 'Unbounded', css: "'Unbounded', sans-serif" },
+  { id: 'grotesk', label: 'Grotesk', css: "'Space Grotesk', sans-serif" },
+  { id: 'serif', label: 'Serif', css: "Georgia, 'Times New Roman', serif" },
+  { id: 'mono', label: 'Mono', css: "'Courier New', monospace" },
+  { id: 'narrow', label: 'Impact', css: "Impact, 'Arial Narrow', sans-serif" },
+]
 
 export const T = {
   ru: {
@@ -178,9 +183,9 @@ export const T = {
     nav_how: 'Как это работает',
     nav_wallet: 'Кошелёк',
     tagline: 'Футболки, за которые с тобой заговорят в автобусе',
-    hero_1: 'НАДЕЛ',
-    hero_2: 'ФУТБОЛКУ',
-    hero_3: 'ЗАСМЕЯЛСЯ',
+    hero_1: 'ПРИОБРЁЛ',
+    hero_2: 'РАССМЕШИЛ',
+    hero_3: 'ПОСМЕЯЛСЯ',
     hero_sub: 'Мемные футболки ручной печати. Каждый принт проверен на живых людях: если никто не улыбнулся — принт в мусор.',
     cta_shop: 'Смотреть каталог',
     cta_random: 'Мне повезёт 🎲',
@@ -271,7 +276,15 @@ export const T = {
     d_photo_add: 'Загрузить картинку',
     d_photo_del: 'Убрать картинку',
     d_photo_size: 'Размер картинки',
-    d_photo_first: 'Картинка сверху',
+    d_font: 'Шрифт',
+    d_style: 'Начертание',
+    d_bold: 'Жирный',
+    d_italic: 'Курсив',
+    d_upper: 'КАПСОМ',
+    d_align: 'Выравнивание',
+    d_drag: 'Перетаскивай текст и картинку прямо на футболке',
+    d_center: 'По центру',
+    d_layer: 'Слой',
     d_reset: 'Сбросить',
     d_empty: 'Добавь текст или картинку',
     d_too_big: 'Файл больше 8 МБ — возьми поменьше',
@@ -295,9 +308,9 @@ export const T = {
     nav_how: 'Қалай жұмыс істейді',
     nav_wallet: 'Әмиян',
     tagline: 'Автобуста сізбен сөйлесе бастайтын футболкалар',
-    hero_1: 'КИДІҢ',
-    hero_2: 'ФУТБОЛКА',
-    hero_3: 'КҮЛДІҢ',
+    hero_1: 'САТЫП АЛДЫМ',
+    hero_2: 'КҮЛДІРДІМ',
+    hero_3: 'КҮЛДІМ',
     hero_sub: 'Қолмен басылған мем футболкалар. Әр принт тірі адамдарға тексерілген: ешкім күлмесе — принт қоқысқа.',
     cta_shop: 'Каталогты көру',
     cta_random: 'Маған сәттілік 🎲',
@@ -388,7 +401,15 @@ export const T = {
     d_photo_add: 'Сурет жүктеу',
     d_photo_del: 'Суретті алып тастау',
     d_photo_size: 'Сурет өлшемі',
-    d_photo_first: 'Сурет жоғарыда',
+    d_font: 'Қаріп',
+    d_style: 'Стилі',
+    d_bold: 'Қалың',
+    d_italic: 'Көлбеу',
+    d_upper: 'БАС ӘРІП',
+    d_align: 'Туралау',
+    d_drag: 'Мәтін мен суретті футболканың үстінде сүйреп жылжыт',
+    d_center: 'Ортаға',
+    d_layer: 'Қабат',
     d_reset: 'Тазалау',
     d_empty: 'Мәтін не сурет қос',
     d_too_big: 'Файл 8 МБ-тан үлкен — кішірегін ал',

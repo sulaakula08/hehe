@@ -1,10 +1,12 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import Tshirt from './Tshirt.jsx'
-import { CUSTOM_COLORS, INK_COLORS, CUSTOM_PRICE, SIZES, fmt } from '../data.js'
+import Tshirt, { PRINT_ZONE } from './Tshirt.jsx'
+import { CUSTOM_COLORS, INK_COLORS, FONTS, CUSTOM_PRICE, SIZES, fmt } from '../data.js'
 
 const MAX_FILE = 8 * 1024 * 1024   // 8 МБ до сжатия
 const MAX_SIDE = 420               // во столько ужимаем перед сохранением
+
+const clamp = (v, min, max) => Math.min(max, Math.max(min, v))
 
 /**
  * Ужимает картинку в браузере: дизайн уезжает в localStorage и в заказ,
@@ -38,10 +40,15 @@ const START = {
   fabric: CUSTOM_COLORS[0].fabric,
   ink: CUSTOM_COLORS[0].ink,
   text: '',
+  font: 'display',
+  bold: true,
+  italic: false,
+  upper: true,
   textSize: 1,
+  textPos: { x: 0, y: 34 },
   image: null,
   imageScale: 1,
-  imageFirst: true,
+  imagePos: { x: 0, y: -26 },
 }
 
 export default function Designer({ t, lang, onClose, onAdd, onToast }) {
@@ -52,7 +59,20 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
 
   const set = (patch) => setD((old) => ({ ...old, ...patch }))
 
-  const pickFabric = (c) => set({ fabric: c.fabric, ink: c.ink })
+  // Двигаем элемент, не выпуская его за печатную зону.
+  const move = useCallback((target, dx, dy) => {
+    setD((old) => {
+      const key = target === 'image' ? 'imagePos' : 'textPos'
+      const p = old[key]
+      return {
+        ...old,
+        [key]: {
+          x: clamp(p.x + dx, -PRINT_ZONE.x, PRINT_ZONE.x),
+          y: clamp(p.y + dy, PRINT_ZONE.yTop, PRINT_ZONE.yBottom),
+        },
+      }
+    })
+  }, [])
 
   const onFile = async (e) => {
     const file = e.target.files?.[0]
@@ -98,9 +118,12 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
       </div>
 
       <div className="d-body">
-        {/* ── живой предпросмотр ── */}
-        <div className="d-preview" style={{ background: `${d.fabric}22` }}>
-          <Tshirt product={preview} lang={lang} custom={d} big />
+        {/* ── живой предпросмотр, тут же и двигаем ── */}
+        <div className="d-preview-wrap">
+          <div className="d-preview" style={{ background: `${d.fabric}22` }}>
+            <Tshirt product={preview} lang={lang} custom={d} big editable onMove={move} />
+          </div>
+          <p className="d-hint muted">✋ {t.d_drag}</p>
         </div>
 
         {/* ── настройки ── */}
@@ -113,7 +136,7 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
                   key={c.id}
                   className={`swatch ${d.fabric === c.fabric ? 'on' : ''}`}
                   style={{ background: c.fabric }}
-                  onClick={() => pickFabric(c)}
+                  onClick={() => set({ fabric: c.fabric, ink: c.ink })}
                   aria-label={c.id}
                 />
               ))}
@@ -123,13 +146,55 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
           <label className="d-field">
             <span>{t.d_text}</span>
             <textarea
-              rows={3}
+              rows={2}
               value={d.text}
               placeholder={t.d_text_ph}
               onChange={(e) => set({ text: e.target.value.slice(0, 120) })}
             />
             <small className="muted">{t.d_text_hint} · {d.text.length}/120</small>
           </label>
+
+          <div className="d-field">
+            <span>{t.d_font}</span>
+            <div className="d-fonts">
+              {FONTS.map((f) => (
+                <button
+                  key={f.id}
+                  className={`fontbtn ${d.font === f.id ? 'on' : ''}`}
+                  style={{ fontFamily: f.css }}
+                  onClick={() => set({ font: f.id })}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="d-field">
+            <span>{t.d_style}</span>
+            <div className="d-row">
+              <button
+                className={`chip big ${d.bold ? 'on' : ''}`}
+                style={{ fontWeight: 800 }}
+                onClick={() => set({ bold: !d.bold })}
+              >
+                B
+              </button>
+              <button
+                className={`chip big ${d.italic ? 'on' : ''}`}
+                style={{ fontStyle: 'italic', fontFamily: 'Georgia, serif' }}
+                onClick={() => set({ italic: !d.italic })}
+              >
+                I
+              </button>
+              <button
+                className={`chip big ${d.upper ? 'on' : ''}`}
+                onClick={() => set({ upper: !d.upper })}
+              >
+                {t.d_upper}
+              </button>
+            </div>
+          </div>
 
           <div className="d-field">
             <span>{t.d_ink}</span>
@@ -149,7 +214,7 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
           <label className="d-field">
             <span>{t.d_size}</span>
             <input
-              type="range" min="0.6" max="1.6" step="0.05"
+              type="range" min="0.5" max="2.2" step="0.05"
               value={d.textSize}
               onChange={(e) => set({ textSize: +e.target.value })}
             />
@@ -169,24 +234,14 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
           </div>
 
           {d.image && (
-            <>
-              <label className="d-field">
-                <span>{t.d_photo_size}</span>
-                <input
-                  type="range" min="0.5" max="1.6" step="0.05"
-                  value={d.imageScale}
-                  onChange={(e) => set({ imageScale: +e.target.value })}
-                />
-              </label>
-              <label className="d-check">
-                <input
-                  type="checkbox"
-                  checked={d.imageFirst}
-                  onChange={(e) => set({ imageFirst: e.target.checked })}
-                />
-                <span>{t.d_photo_first}</span>
-              </label>
-            </>
+            <label className="d-field">
+              <span>{t.d_photo_size}</span>
+              <input
+                type="range" min="0.4" max="2" step="0.05"
+                value={d.imageScale}
+                onChange={(e) => set({ imageScale: +e.target.value })}
+              />
+            </label>
           )}
 
           <div className="d-field">
@@ -202,6 +257,12 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
 
           <div className="d-foot">
             <button className="btn" onClick={() => setD(START)}>{t.d_reset}</button>
+            <button
+              className="btn"
+              onClick={() => set({ textPos: { x: 0, y: START.textPos.y }, imagePos: { x: 0, y: START.imagePos.y } })}
+            >
+              {t.d_center}
+            </button>
             <span className="price">{fmt(CUSTOM_PRICE)}</span>
             <button className="btn btn-solid" onClick={add} disabled={busy}>{t.add}</button>
           </div>

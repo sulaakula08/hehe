@@ -1,4 +1,10 @@
+import { useRef } from 'react'
 import { motion } from 'framer-motion'
+import { FONTS } from '../data.js'
+
+// Печатная зона в координатах viewBox, относительно центра груди (150, 158).
+export const PRINT_ZONE = { x: 56, yTop: -74, yBottom: 96 }
+const clamp = (v, min, max) => Math.min(max, Math.max(min, v))
 
 // Мини-иллюстрации для принтов. Каждая — набор путей поверх текста.
 function Art({ kind, ink }) {
@@ -117,11 +123,52 @@ const COLLAR_IN = 'M126,55 C132,73 168,73 174,55'
  * Объём делают три слоя поверх заливки: продольный градиент (цилиндр корпуса),
  * мягкие затемнения в проймах и у подола, и тонкие складки.
  */
-export default function Tshirt({ product, lang, hovered = false, big = false, custom = null }) {
+export default function Tshirt({
+  product, lang, hovered = false, big = false,
+  custom = null, editable = false, onMove = null,
+}) {
   const { color, ink, art, id } = product
 
   // Дизайн из конструктора приходит либо пропом, либо внутри товара в корзине.
   const design = custom ?? product.custom ?? null
+
+  /* ── перетаскивание элементов дизайна ── */
+  const svgRef = useRef(null)
+  const drag = useRef(null)
+
+  // Экранные координаты → координаты viewBox, иначе перетаскивание
+  // рассыпается при любом масштабе превью.
+  const toViewBox = (e) => {
+    const svg = svgRef.current
+    const pt = svg.createSVGPoint()
+    pt.x = e.clientX
+    pt.y = e.clientY
+    return pt.matrixTransform(svg.getScreenCTM().inverse())
+  }
+
+  const startDrag = (target) => (e) => {
+    if (!editable || !onMove) return
+    e.stopPropagation()
+    // Захват указателя — необязательная оптимизация: если браузер его не даёт
+    // (указателя уже нет), перетаскивание всё равно должно начаться.
+    try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* не критично */ }
+    const p = toViewBox(e)
+    drag.current = { target, x: p.x, y: p.y }
+  }
+
+  const moveDrag = (e) => {
+    if (!drag.current) return
+    const p = toViewBox(e)
+    const d = drag.current
+    onMove(d.target, p.x - d.x, p.y - d.y)
+    drag.current = { ...d, x: p.x, y: p.y }
+  }
+
+  const endDrag = (e) => {
+    if (!drag.current) return
+    try { e.currentTarget.releasePointerCapture?.(e.pointerId) } catch { /* не критично */ }
+    drag.current = null
+  }
 
   // У товара может быть настоящая фотография — тогда показываем её как есть.
   if (product.photo) {
@@ -139,25 +186,34 @@ export default function Tshirt({ product, lang, hovered = false, big = false, cu
   // Дизайн из конструктора перебивает цвет ткани и содержимое принта.
   const fabric = design?.fabric ?? color
   const inkColor = design?.ink ?? ink
-  const lines = design
+  const rawLines = design
     ? (design.text ?? '').split('\n').filter((l) => l.trim() !== '')
     : product[lang].print.split('\n')
+  const lines = design?.upper ? rawLines.map((l) => l.toUpperCase()) : rawLines
 
-  // Корпус — 144px по viewBox; печатаем внутри 108px, чтобы остались поля.
+  // В конструкторе кегль задаёт пользователь; в каталоге подгоняем под ширину сами.
   // 0.86 — средняя ширина глифа Unbounded 800 относительно кегля (замерено в браузере).
   const longest = lines.length ? Math.max(...lines.map((l) => l.length)) : 1
-  const baseMax = design ? 20 * (design.textSize ?? 1) : (big ? 25 : 23)
-  const fontSize = Math.min(baseMax, 108 / (longest * 0.86))
-  const lineH = fontSize * 1.18
+  const fontSize = design
+    ? 20 * (design.textSize ?? 1)
+    : Math.min(big ? 25 : 23, 108 / (longest * 0.86))
+  const lineH = fontSize * 1.2
+
+  const fontCss = FONTS.find((f) => f.id === (design?.font ?? 'display'))?.css ?? FONTS[0].css
 
   const uid = `t-${id}`
 
   return (
     <motion.svg
+      ref={svgRef}
       viewBox="0 0 300 340"
       className="tee"
-      animate={hovered ? { rotate: [0, -1.2, 1.2, 0] } : { rotate: 0 }}
+      animate={hovered && !editable ? { rotate: [0, -1.2, 1.2, 0] } : { rotate: 0 }}
       transition={{ duration: 0.6 }}
+      onPointerMove={editable ? moveDrag : undefined}
+      onPointerUp={editable ? endDrag : undefined}
+      onPointerCancel={editable ? endDrag : undefined}
+      style={editable ? { touchAction: 'none' } : undefined}
     >
       <defs>
         {/* Цилиндрический объём корпуса: края в тень, центр в свет. */}
@@ -255,44 +311,77 @@ export default function Tshirt({ product, lang, hovered = false, big = false, cu
       <g clipPath={`url(#${uid}-clip)`}>
         <g transform="translate(150 158)">
           <motion.g
-            animate={hovered ? { scale: 1.04 } : { scale: 1 }}
+            animate={hovered && !editable ? { scale: 1.04 } : { scale: 1 }}
             transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-            opacity="0.93"
+            opacity={editable ? 1 : 0.93}
           >
             {design ? (
-              /* ── дизайн из конструктора: картинка + текст ── */
+              /* ── дизайн из конструктора: картинка и текст двигаются отдельно ── */
               (() => {
                 const imgH = 92 * (design.imageScale ?? 1)
+                const ip = design.imagePos ?? { x: 0, y: -26 }
+                const tp = design.textPos ?? { x: 0, y: 34 }
                 const textH = lines.length * lineH
-                const gap = design.image && lines.length ? 10 : 0
-                const totalH = (design.image ? imgH : 0) + gap + textH
-                let cursor = -totalH / 2          // верх композиции
-                const imageFirst = design.imageFirst !== false
 
                 const imageNode = design.image && (
-                  <image
-                    href={design.image}
-                    x={-imgH / 2} y={imageFirst ? cursor : cursor + textH + gap}
-                    width={imgH} height={imgH}
-                    preserveAspectRatio="xMidYMid meet"
-                  />
-                )
-                const textNode = lines.map((l, i) => (
-                  <text
-                    key={i}
-                    x="0"
-                    y={(imageFirst && design.image ? cursor + imgH + gap : cursor)
-                       + i * lineH + fontSize * 0.82}
-                    textAnchor="middle"
-                    fill={inkColor}
-                    className="tee-print"
-                    style={{ fontSize }}
+                  <g
+                    key="img"
+                    transform={`translate(${ip.x} ${ip.y})`}
+                    onPointerDown={startDrag('image')}
+                    style={{ cursor: editable ? 'grab' : 'default' }}
                   >
-                    {l}
-                  </text>
-                ))
+                    <image
+                      href={design.image}
+                      x={-imgH / 2} y={-imgH / 2}
+                      width={imgH} height={imgH}
+                      preserveAspectRatio="xMidYMid meet"
+                    />
+                    {editable && (
+                      <rect
+                        x={-imgH / 2} y={-imgH / 2} width={imgH} height={imgH}
+                        fill="transparent" stroke={inkColor} strokeOpacity="0.35"
+                        strokeWidth="1" strokeDasharray="4 4"
+                      />
+                    )}
+                  </g>
+                )
 
-                return imageFirst ? <>{imageNode}{textNode}</> : <>{textNode}{imageNode}</>
+                const textNode = lines.length > 0 && (
+                  <g
+                    key="txt"
+                    transform={`translate(${tp.x} ${tp.y})`}
+                    onPointerDown={startDrag('text')}
+                    style={{ cursor: editable ? 'grab' : 'default' }}
+                  >
+                    {editable && (
+                      <rect
+                        x={-56} y={-textH / 2 - 4} width={112} height={textH + 8}
+                        fill="transparent" stroke={inkColor} strokeOpacity="0.25"
+                        strokeWidth="1" strokeDasharray="4 4"
+                      />
+                    )}
+                    {lines.map((l, i) => (
+                      <text
+                        key={i}
+                        x="0"
+                        y={-textH / 2 + i * lineH + fontSize * 0.85}
+                        textAnchor="middle"
+                        fill={inkColor}
+                        style={{
+                          fontFamily: fontCss,
+                          fontSize,
+                          fontWeight: design.bold ? 800 : 400,
+                          fontStyle: design.italic ? 'italic' : 'normal',
+                          userSelect: 'none',
+                        }}
+                      >
+                        {l}
+                      </text>
+                    ))}
+                  </g>
+                )
+
+                return <>{imageNode}{textNode}</>
               })()
             ) : (
               <>
