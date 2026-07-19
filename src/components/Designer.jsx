@@ -64,6 +64,24 @@ const START = {
 const sideEmpty = (s) => !s.image && s.text.trim() === ''
 const clone = (o) => JSON.parse(JSON.stringify(o))
 
+/**
+ * Объявлять этот компонент внутри Designer нельзя: при каждом рендере это был бы
+ * новый тип компонента, React выбрасывал бы <input> и монтировал новый — и
+ * перетаскивание ползунка обрывалось бы на первом же движении.
+ */
+function Slider({ label, value, min, max, step, onInput, onStart }) {
+  return (
+    <label className="d-field">
+      <span>{label}</span>
+      <input
+        type="range" min={min} max={max} step={step} value={value}
+        onPointerDown={onStart}
+        onChange={(e) => onInput(+e.target.value)}
+      />
+    </label>
+  )
+}
+
 export default function Designer({ t, lang, onClose, onAdd, onToast }) {
   const [d, setD] = useState(START)
   const [tab, setTab] = useState('text')
@@ -177,17 +195,6 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
   // Пустышка-товар для предпросмотра: Tshirt берёт из неё только id и цвета.
   const preview = { id: `designer-${d.side}`, color: d.fabric, ink: d.ink, ru: {}, kk: {} }
   const flat = { ...cur, fabric: d.fabric, ink: d.ink }
-
-  const Slider = ({ label, value, min, max, step, onInput }) => (
-    <label className="d-field">
-      <span>{label}</span>
-      <input
-        type="range" min={min} max={max} step={step} value={value}
-        onPointerDown={snapshot}
-        onChange={(e) => onInput(+e.target.value)}
-      />
-    </label>
-  )
 
   const TABS = [
     ['tpl', t.d_tab_tpl],
@@ -322,11 +329,11 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
               </div>
 
               <Slider label={t.d_size} value={cur.textSize} min={0.5} max={3} step={0.05}
-                onInput={(v) => setSideData({ textSize: v })} />
+                onInput={(v) => setSideData({ textSize: v })} onStart={snapshot} />
               <Slider label={t.d_width} value={cur.textWidth} min={TEXT_WIDTH.min} max={TEXT_WIDTH.max} step={1}
-                onInput={(v) => setSideData({ textWidth: v })} />
+                onInput={(v) => setSideData({ textWidth: v })} onStart={snapshot} />
               <Slider label={`${t.d_rotate}: ${cur.textRotate}°`} value={cur.textRotate} min={-45} max={45} step={1}
-                onInput={(v) => setSideData({ textRotate: v })} />
+                onInput={(v) => setSideData({ textRotate: v })} onStart={snapshot} />
             </div>
           )}
 
@@ -348,9 +355,9 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
               {cur.image ? (
                 <>
                   <Slider label={t.d_photo_size} value={cur.imageScale} min={0.4} max={2} step={0.05}
-                    onInput={(v) => setSideData({ imageScale: v })} />
+                    onInput={(v) => setSideData({ imageScale: v })} onStart={snapshot} />
                   <Slider label={`${t.d_rotate}: ${cur.imageRotate}°`} value={cur.imageRotate} min={-45} max={45} step={1}
-                    onInput={(v) => setSideData({ imageRotate: v })} />
+                    onInput={(v) => setSideData({ imageRotate: v })} onStart={snapshot} />
                 </>
               ) : (
                 <p className="muted">{t.d_photo_add}</p>

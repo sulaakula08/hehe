@@ -34,7 +34,7 @@ function Ticker({ text }) {
 }
 
 /* ─────────────── карточка товара ─────────────── */
-function Card({ p, lang, t, onAdd, flash, isFav, onFav }) {
+function Card({ p, lang, t, onAdd, isFav, onFav }) {
   const [hover, setHover] = useState(false)
   const [size, setSize] = useState('M')
   const [justAdded, setJustAdded] = useState(false)
@@ -50,7 +50,7 @@ function Card({ p, lang, t, onAdd, flash, isFav, onFav }) {
     <motion.article
       layout
       id={`card-${p.id}`}
-      className={`card ${flash ? 'flash' : ''}`}
+      className="card"
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-60px' }}
@@ -152,7 +152,6 @@ export default function App() {
   const [openDesigner, setOpenDesigner] = useState(false)
   const [toast, setToast] = useState(null)
   const [filter, setFilter] = useState('all')
-  const [flashId, setFlashId] = useState(null)
   const [paying, setPaying] = useState(false)
   const t = T[lang]
 
@@ -267,13 +266,6 @@ export default function App() {
 
   const onFav = (p) => setFavorites((f) => (f.includes(p.id) ? f.filter((x) => x !== p.id) : [...f, p.id]))
 
-  const random = () => {
-    const p = PRODUCTS[Math.floor(Math.random() * PRODUCTS.length)]
-    document.getElementById(`card-${p.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    setFlashId(p.id)
-    setTimeout(() => setFlashId(null), 1800)
-  }
-
   const shown = filter === 'all' ? PRODUCTS : PRODUCTS.filter((p) => p.rarity === filter)
 
   const anyOverlay = openCart || openAccount || openDesigner
@@ -355,9 +347,6 @@ export default function App() {
             <button className="btn btn-hot big" onClick={() => setOpenDesigner(true)}>
               <Icon name="brush" /> {t.designer_open}
             </button>
-            <button className="btn btn-ghost big" onClick={random}>
-              <Icon name="dice" /> {t.cta_random}
-            </button>
           </motion.div>
 
           <div className="stats">
@@ -415,7 +404,7 @@ export default function App() {
             {shown.map((p) => (
               <Card
                 key={p.id} p={p} lang={lang} t={t}
-                onAdd={addToCart} flash={flashId === p.id}
+                onAdd={addToCart}
                 isFav={favorites.includes(p.id)} onFav={onFav}
               />
             ))}
