@@ -215,11 +215,27 @@ export default function App() {
   /** Приводит строку корзины к единому виду: что рисовать, как назвать, почём. */
   const resolveItem = (i) => {
     if (i.custom) {
-      const label = i.custom.text ? `${t.designer}: «${i.custom.text.split('\n')[0]}»` : t.designer
+      const { fabric, ink } = i.custom
+      // До появления сторон дизайн лежал плоско. Корзина у людей могла
+      // сохраниться в старом виде — читаем её как «только перёд».
+      const front = i.custom.front ?? (i.custom.text != null || i.custom.image ? i.custom : null)
+      const back = i.custom.back ?? null
+      const has = (s) => s && (s.image || (s.text ?? '').trim() !== '')
+      // Показываем ту сторону, на которой что-то есть; перёд в приоритете.
+      const shown = has(front) ? front : back
+      const firstText = (front?.text || back?.text || '').split('\n')[0]
+      const both = has(front) && has(back)
+      const label = firstText
+        ? `${t.designer}: «${firstText}»${both ? ` (${t.d_both})` : ''}`
+        : `${t.designer}${both ? ` (${t.d_both})` : ''}`
       return {
         price: CUSTOM_PRICE,
         title: label,
-        product: { id: i.key, color: i.custom.fabric, ink: i.custom.ink, custom: i.custom, ru: {}, kk: {} },
+        product: {
+          id: i.key, color: fabric, ink,
+          custom: { ...shown, fabric, ink },
+          ru: {}, kk: {},
+        },
       }
     }
     const p = PRODUCTS.find((x) => x.id === i.id)

@@ -167,6 +167,30 @@ export const CUSTOM_COLORS = [
 
 export const INK_COLORS = ['#141414', '#ffffff']
 
+// Заготовки: с чистого листа начинать неудобно.
+export const TEMPLATES = [
+  {
+    id: 'slogan',
+    ru: 'Слоган', kk: 'Ұран',
+    patch: { text: 'ЖИЗНЬ\nБОЛЬ', font: 'display', bold: true, upper: true, textSize: 1.6, textWidth: 100, textPos: { x: 0, y: 0 }, textRotate: 0, outline: false },
+  },
+  {
+    id: 'diagonal',
+    ru: 'По диагонали', kk: 'Қиғаш',
+    patch: { text: 'ПОЗЖЕ', font: 'narrow', bold: true, upper: true, textSize: 2.2, textWidth: 118, textPos: { x: 0, y: 6 }, textRotate: -14, outline: true },
+  },
+  {
+    id: 'quote',
+    ru: 'Цитата', kk: 'Дәйексөз',
+    patch: { text: '«я в порядке»\n— я, не в порядке', font: 'serif', bold: false, italic: true, upper: false, textSize: 1.1, textWidth: 108, textPos: { x: 0, y: 4 }, textRotate: 0, outline: false },
+  },
+  {
+    id: 'terminal',
+    ru: 'Терминал', kk: 'Терминал',
+    patch: { text: '> sudo make me\n  a sandwich', font: 'mono', bold: true, italic: false, upper: false, textSize: 1.15, textWidth: 112, textPos: { x: 0, y: 2 }, textRotate: 0, outline: false },
+  },
+]
+
 // Системные шрифты + два уже подключённых: ничего лишнего не качаем.
 export const FONTS = [
   { id: 'display', label: 'Unbounded', css: "'Unbounded', sans-serif" },
@@ -282,7 +306,22 @@ export const T = {
     d_italic: 'Курсив',
     d_upper: 'КАПСОМ',
     d_align: 'Выравнивание',
-    d_drag: 'Перетаскивай текст и картинку прямо на футболке',
+    d_width: 'Ширина блока текста',
+    d_drag: 'Перетаскивай текст и картинку; за палочки по бокам — ширина',
+    d_tab_tpl: 'Шаблоны',
+    d_tab_text: 'Текст',
+    d_tab_photo: 'Фото',
+    d_tab_shirt: 'Футболка',
+    d_side: 'Сторона',
+    d_front: 'Перёд',
+    d_back: 'Спина',
+    d_rotate: 'Поворот',
+    d_outline: 'Обводка',
+    d_undo: 'Отменить',
+    d_redo: 'Вернуть',
+    d_tpl_hint: 'Заготовка заменит текст на выбранной стороне',
+    d_side_empty: 'На этой стороне пусто',
+    d_both: 'перёд + спина',
     d_center: 'По центру',
     d_layer: 'Слой',
     d_reset: 'Сбросить',
@@ -407,7 +446,22 @@ export const T = {
     d_italic: 'Көлбеу',
     d_upper: 'БАС ӘРІП',
     d_align: 'Туралау',
-    d_drag: 'Мәтін мен суретті футболканың үстінде сүйреп жылжыт',
+    d_width: 'Мәтін блогының ені',
+    d_drag: 'Мәтін мен суретті сүйре; бүйірдегі таяқшалармен енін өзгерт',
+    d_tab_tpl: 'Дайын',
+    d_tab_text: 'Мәтін',
+    d_tab_photo: 'Сурет',
+    d_tab_shirt: 'Футболка',
+    d_side: 'Жағы',
+    d_front: 'Алды',
+    d_back: 'Арты',
+    d_rotate: 'Бұрылыс',
+    d_outline: 'Контур',
+    d_undo: 'Болдырмау',
+    d_redo: 'Қайтару',
+    d_tpl_hint: 'Дайындама таңдалған жақтағы мәтінді ауыстырады',
+    d_side_empty: 'Бұл жақта бос',
+    d_both: 'алды + арты',
     d_center: 'Ортаға',
     d_layer: 'Қабат',
     d_reset: 'Тазалау',

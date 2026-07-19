@@ -1,10 +1,43 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { FONTS } from '../data.js'
 
 // Печатная зона в координатах viewBox, относительно центра груди (150, 158).
 export const PRINT_ZONE = { x: 56, yTop: -74, yBottom: 96 }
-const clamp = (v, min, max) => Math.min(max, Math.max(min, v))
+export const TEXT_WIDTH = { min: 28, max: 118, start: 92 }
+
+/**
+ * В SVG нет переноса строк — считаем его сами.
+ * Единицы viewBox совпадают с пикселями кегля, поэтому canvas.measureText
+ * даёт ширину прямо в тех же координатах.
+ */
+function wrapLines(ctx, paragraphs, maxW, fontSpec) {
+  ctx.font = fontSpec
+  const out = []
+  const fits = (s) => ctx.measureText(s).width <= maxW
+
+  for (const p of paragraphs) {
+    const words = p.split(/\s+/).filter(Boolean)
+    if (!words.length) continue
+    let line = ''
+    for (const raw of words) {
+      // Слово шире блока рубим по буквам, иначе оно вылезет за край.
+      let word = raw
+      while (!fits(word) && word.length > 1) {
+        let cut = word.length - 1
+        while (cut > 1 && !fits(word.slice(0, cut))) cut--
+        if (line) { out.push(line); line = '' }
+        out.push(word.slice(0, cut))
+        word = word.slice(cut)
+      }
+      const test = line ? `${line} ${word}` : word
+      if (!line || fits(test)) line = test
+      else { out.push(line); line = word }
+    }
+    if (line) out.push(line)
+  }
+  return out
+}
 
 // Мини-иллюстрации для принтов. Каждая — набор путей поверх текста.
 function Art({ kind, ink }) {
@@ -115,8 +148,11 @@ const BODY = `
 `
 
 // Ворот: внешний край горловины и внутренняя кромка рубчика.
+// Со спины горловина заметно выше и площе — по этому силуэт и читается.
 const COLLAR_OUT = 'M118,58 C124,81 176,81 182,58'
 const COLLAR_IN = 'M126,55 C132,73 168,73 174,55'
+const COLLAR_OUT_BACK = 'M118,58 C124,70 176,70 182,58'
+const COLLAR_IN_BACK = 'M126,55 C132,64 168,64 174,55'
 
 /**
  * Футболка целиком рисуется в SVG — никаких внешних картинок.
@@ -125,7 +161,7 @@ const COLLAR_IN = 'M126,55 C132,73 168,73 174,55'
  */
 export default function Tshirt({
   product, lang, hovered = false, big = false,
-  custom = null, editable = false, onMove = null,
+  custom = null, editable = false, onMove = null, onMoveStart = null, back = false,
 }) {
   const { color, ink, art, id } = product
 
@@ -152,6 +188,7 @@ export default function Tshirt({
     // Захват указателя — необязательная оптимизация: если браузер его не даёт
     // (указателя уже нет), перетаскивание всё равно должно начаться.
     try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* не критично */ }
+    onMoveStart?.(target)          // конструктор снимает состояние для отмены
     const p = toViewBox(e)
     drag.current = { target, x: p.x, y: p.y }
   }
@@ -186,20 +223,38 @@ export default function Tshirt({
   // Дизайн из конструктора перебивает цвет ткани и содержимое принта.
   const fabric = design?.fabric ?? color
   const inkColor = design?.ink ?? ink
+  const fontCss = FONTS.find((f) => f.id === (design?.font ?? 'display'))?.css ?? FONTS[0].css
+
+  const measure = useMemo(
+    () => (typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d')),
+    [],
+  )
+
   const rawLines = design
-    ? (design.text ?? '').split('\n').filter((l) => l.trim() !== '')
+    ? (design.text ?? '').split('\n')
     : product[lang].print.split('\n')
-  const lines = design?.upper ? rawLines.map((l) => l.toUpperCase()) : rawLines
+  const cased = design?.upper ? rawLines.map((l) => l.toUpperCase()) : rawLines
 
   // В конструкторе кегль задаёт пользователь; в каталоге подгоняем под ширину сами.
   // 0.86 — средняя ширина глифа Unbounded 800 относительно кегля (замерено в браузере).
-  const longest = lines.length ? Math.max(...lines.map((l) => l.length)) : 1
+  const catalogLongest = design ? 1 : Math.max(...cased.map((l) => l.length), 1)
+  // 14 — базовый кегль дизайна: при 20 в строку влезало 6 букв Unbounded 800,
+  // потому что печатная зона всего ~118 единиц. Крупнее делается слайдером.
   const fontSize = design
-    ? 20 * (design.textSize ?? 1)
-    : Math.min(big ? 25 : 23, 108 / (longest * 0.86))
+    ? 14 * (design.textSize ?? 1)
+    : Math.min(big ? 25 : 23, 108 / (catalogLongest * 0.86))
   const lineH = fontSize * 1.2
 
-  const fontCss = FONTS.find((f) => f.id === (design?.font ?? 'display'))?.css ?? FONTS[0].css
+  const textWidth = design?.textWidth ?? TEXT_WIDTH.start
+
+  // Текст дизайна переносим по ширине блока, а не только по явным \n.
+  const lines = useMemo(() => {
+    if (!design) return cased.filter((l) => l.trim() !== '')
+    if (!measure) return cased.filter((l) => l.trim() !== '')
+    const spec = `${design.italic ? 'italic ' : ''}${design.bold ? 800 : 400} ${fontSize}px ${fontCss}`
+    return wrapLines(measure, cased, textWidth, spec)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [design?.text, design?.upper, design?.italic, design?.bold, fontSize, fontCss, textWidth, measure, product, lang])
 
   const uid = `t-${id}`
 
@@ -296,9 +351,13 @@ export default function Tshirt({
       </g>
 
       {/* Рубчатый ворот */}
-      <path d={COLLAR_OUT} fill="none" stroke="#000" strokeOpacity="0.28" strokeWidth="9" strokeLinecap="round" />
-      <path d={COLLAR_IN} fill="none" stroke={fabric} strokeWidth="7" strokeLinecap="round" />
-      <path d={COLLAR_IN} fill="none" stroke="#fff" strokeOpacity="0.18" strokeWidth="2" strokeLinecap="round" />
+      <path d={back ? COLLAR_OUT_BACK : COLLAR_OUT} fill="none" stroke="#000" strokeOpacity="0.28" strokeWidth="9" strokeLinecap="round" />
+      <path d={back ? COLLAR_IN_BACK : COLLAR_IN} fill="none" stroke={fabric} strokeWidth="7" strokeLinecap="round" />
+      <path d={back ? COLLAR_IN_BACK : COLLAR_IN} fill="none" stroke="#fff" strokeOpacity="0.18" strokeWidth="2" strokeLinecap="round" />
+      {/* Со спины видна тесьма по горловине */}
+      {back && (
+        <path d="M112,62 C124,78 176,78 188,62" fill="none" stroke="#000" strokeOpacity="0.16" strokeWidth="3" strokeLinecap="round" />
+      )}
 
       {/* Отстрочка по подолу и низу рукавов */}
       <g fill="none" stroke="#000" strokeOpacity="0.14" strokeWidth="1.6" strokeDasharray="4 4">
@@ -326,7 +385,7 @@ export default function Tshirt({
                 const imageNode = design.image && (
                   <g
                     key="img"
-                    transform={`translate(${ip.x} ${ip.y})`}
+                    transform={`translate(${ip.x} ${ip.y}) rotate(${design.imageRotate ?? 0})`}
                     onPointerDown={startDrag('image')}
                     style={{ cursor: editable ? 'grab' : 'default' }}
                   >
@@ -346,37 +405,60 @@ export default function Tshirt({
                   </g>
                 )
 
+                const halfW = textWidth / 2
+                // Обводка спасает светлый текст на светлой ткани и наоборот.
+                const outlineColor = design.ink === '#141414' ? '#ffffff' : '#141414'
                 const textNode = lines.length > 0 && (
-                  <g
-                    key="txt"
-                    transform={`translate(${tp.x} ${tp.y})`}
-                    onPointerDown={startDrag('text')}
-                    style={{ cursor: editable ? 'grab' : 'default' }}
-                  >
-                    {editable && (
-                      <rect
-                        x={-56} y={-textH / 2 - 4} width={112} height={textH + 8}
-                        fill="transparent" stroke={inkColor} strokeOpacity="0.25"
-                        strokeWidth="1" strokeDasharray="4 4"
-                      />
-                    )}
-                    {lines.map((l, i) => (
-                      <text
-                        key={i}
-                        x="0"
-                        y={-textH / 2 + i * lineH + fontSize * 0.85}
-                        textAnchor="middle"
-                        fill={inkColor}
-                        style={{
-                          fontFamily: fontCss,
-                          fontSize,
-                          fontWeight: design.bold ? 800 : 400,
-                          fontStyle: design.italic ? 'italic' : 'normal',
-                          userSelect: 'none',
-                        }}
+                  <g key="txt" transform={`translate(${tp.x} ${tp.y}) rotate(${design.textRotate ?? 0})`}>
+                    <g
+                      onPointerDown={startDrag('text')}
+                      style={{ cursor: editable ? 'grab' : 'default' }}
+                    >
+                      {editable && (
+                        <rect
+                          x={-halfW} y={-textH / 2 - 4} width={textWidth} height={textH + 8}
+                          fill="transparent" stroke={inkColor} strokeOpacity="0.3"
+                          strokeWidth="1" strokeDasharray="4 4"
+                        />
+                      )}
+                      {lines.map((l, i) => (
+                        <text
+                          key={i}
+                          x="0"
+                          y={-textH / 2 + i * lineH + fontSize * 0.85}
+                          textAnchor="middle"
+                          fill={inkColor}
+                          stroke={design.outline ? outlineColor : undefined}
+                          strokeWidth={design.outline ? Math.max(1, fontSize * 0.14) : undefined}
+                          strokeLinejoin="round"
+                          paintOrder="stroke"
+                          style={{
+                            fontFamily: fontCss,
+                            fontSize,
+                            fontWeight: design.bold ? 800 : 400,
+                            fontStyle: design.italic ? 'italic' : 'normal',
+                            userSelect: 'none',
+                          }}
+                        >
+                          {l}
+                        </text>
+                      ))}
+                    </g>
+
+                    {/* Ручки ширины блока: тянешь — текст переносится по-новому. */}
+                    {editable && [['left', -halfW], ['right', halfW]].map(([side, hx]) => (
+                      <g
+                        key={side}
+                        onPointerDown={startDrag(`width-${side}`)}
+                        style={{ cursor: 'ew-resize' }}
                       >
-                        {l}
-                      </text>
+                        {/* широкая прозрачная зона — чтобы попадать пальцем */}
+                        <rect x={hx - 10} y={-18} width="20" height="36" fill="transparent" />
+                        <rect
+                          x={hx - 1.6} y={-7} width="3.2" height="14" rx="1.6"
+                          fill={inkColor} fillOpacity="0.75"
+                        />
+                      </g>
                     ))}
                   </g>
                 )

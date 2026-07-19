@@ -427,6 +427,35 @@ a { color: inherit; text-decoration: none; }
 .d-preview .tee { width: 100%; touch-action: none; }
 .d-hint { font-size: 12px; text-align: center; }
 
+.d-head { display: flex; align-items: flex-start; gap: 12px; }
+.d-undo { display: flex; gap: 6px; margin-left: auto; margin-right: 42px; }
+.d-undo .btn { padding: 8px 14px; font-size: 18px; line-height: 1; }
+
+.d-sides { display: flex; gap: 8px; }
+.d-sides .chip { flex: 1; justify-content: center; display: flex; align-items: center; gap: 6px; }
+.d-sides .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--hot); display: inline-block; }
+
+.d-tabs {
+  display: flex; gap: 4px; background: rgba(0,0,0,.06);
+  border-radius: 999px; padding: 4px; position: sticky; top: 0; z-index: 2;
+}
+.d-tabs button {
+  flex: 1; border: 0; background: transparent; cursor: pointer; color: var(--ink);
+  padding: 9px 4px; font-weight: 700; font-size: 13px; border-radius: 999px; white-space: nowrap;
+}
+.d-tabs button.on { background: var(--ink); color: var(--acid); }
+.d-pane { display: flex; flex-direction: column; gap: 13px; }
+
+.d-tpls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tpl {
+  border: var(--line); border-radius: 12px; background: #fff; cursor: pointer;
+  padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; text-align: left;
+  box-shadow: 3px 3px 0 var(--ink); transition: transform .12s;
+}
+.tpl:hover { transform: translate(-2px, -2px); }
+.tpl b { font-size: 13px; }
+.tpl span { font-size: 12px; opacity: .6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 .d-fonts { display: flex; gap: 6px; flex-wrap: wrap; }
 .fontbtn {
   border: 2px solid var(--ink); background: #fff; border-radius: 10px;
@@ -462,13 +491,26 @@ a { color: inherit; text-decoration: none; }
 .d-foot {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   border-top: var(--line); padding-top: 14px; margin-top: 4px;
+  position: sticky; bottom: -26px; background: var(--paper); padding-bottom: 4px;
 }
 .d-foot .price { margin-left: auto; }
 
 /* ── адаптив ── */
 @media (max-width: 760px) {
   .d-body { grid-template-columns: 1fr; }
-  .d-preview-wrap { position: static; max-width: 320px; margin: 0 auto; width: 100%; }
+  /* Превью остаётся на виду, пока крутишь настройки под ним. */
+  .d-preview-wrap { position: sticky; top: -8px; z-index: 3; background: var(--paper); padding-bottom: 6px; max-width: 320px; margin: 0 auto; width: 100%; }
+  .d-preview { max-height: 42vh; display: grid; place-items: center; }
+  .d-preview .tee { max-height: 40vh; width: auto; }
+  /* Не меньше ~44px по высоте — иначе пальцем не попасть. */
+  .d-tabs button { font-size: 12px; padding: 13px 2px; }
+  .d-sides .chip.big, .d-controls .chip.big { padding: 12px 14px; }
+  .d-undo .btn, .d-foot .btn { padding: 12px 16px; }
+  .d-tpls { grid-template-columns: 1fr; }
+  .designer { padding: 18px 14px; }
+  .d-undo { margin-right: 38px; }
+  /* Пальцем в ползунок попасть тяжелее, чем мышью */
+  .d-field input[type=range] { height: 30px; }
 }
 
 @media (max-width: 900px) {
