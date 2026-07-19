@@ -6,16 +6,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Space+Grotesk:wght@400;500;700&display=swap');
 
 :root {
-  --paper: #f4f1ea;
-  --ink: #12100e;
+  --paper: #f4f1ea;          /* фон страницы */
+  --ink: #12100e;            /* текст и рамки */
+  --surface: #ffffff;        /* карточки, поля ввода */
+  --shadow-c: var(--ink);    /* цвет жёстких теней */
+  --tint: rgba(0, 0, 0, .06);/* подложка вкладок */
+  --dot: rgba(0, 0, 0, .09); /* точки фона */
+  --band-bg: #12100e;        /* тёмные полосы: тикер, «как это работает» */
+  --band-fg: #f4f1ea;
+  --pill-bg: #12100e;        /* активные чипы и вкладки */
+  --pill-fg: #ffe600;
+
   --acid: #ffe600;
+  --on-acid: #14120f;        /* текст поверх жёлтого — всегда тёмный */
+  --logo-bg: #12100e;        /* знак: подложка и лицо */
+  --logo-fg: #ffe600;
   --hot: #ff2e88;
   --mint: #00e5a0;
   --line: 3px solid var(--ink);
-  --shadow: 6px 6px 0 var(--ink);
-  --shadow-lg: 12px 12px 0 var(--ink);
+  --shadow: 6px 6px 0 var(--shadow-c);
+  --shadow-lg: 12px 12px 0 var(--shadow-c);
   --r: 18px;
 }
+
+/* Тёмная тема. Рамки остаются светлыми — брутализм от этого только выигрывает,
+   а жёсткие тени берут приглушённый серо-коричневый, иначе они сливаются с фоном. */
+:root[data-theme='dark'] {
+  --paper: #14120f;
+  --ink: #f2efe9;
+  --surface: #1e1a16;
+  --shadow-c: #3b342c;
+  --tint: rgba(255, 255, 255, .08);
+  --dot: rgba(255, 255, 255, .07);
+  --band-bg: #221d18;
+  --band-fg: #f2efe9;
+  --pill-bg: #ffe600;
+  --pill-fg: #14120f;
+  /* На тёмном фоне тёмный знак пропадает — переворачиваем его. */
+  --logo-bg: #ffe600;
+  --logo-fg: #14120f;
+}
+
+html { color-scheme: light; }
+:root[data-theme='dark'] { color-scheme: dark; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -28,7 +61,7 @@ body {
   overflow-x: hidden;
   /* лёгкая «бумажная» сетка */
   background-image:
-    radial-gradient(circle at 1px 1px, rgba(0, 0, 0, .09) 1px, transparent 0);
+    radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
   background-size: 26px 26px;
 }
 
@@ -37,7 +70,9 @@ h1, h2, h3, h4, .logo-word, .price, .drop-cell b {
   letter-spacing: -0.02em;
 }
 
-button, a { font-family: inherit; }
+/* Кнопки не наследуют цвет текста: браузер подставляет свой `buttontext`.
+   В светлой теме он чёрный и потому незаметен, в тёмной — сливается с фоном. */
+button, a { font-family: inherit; color: inherit; }
 a { color: inherit; text-decoration: none; }
 
 /* ── прогресс скролла ── */
@@ -61,15 +96,16 @@ a { color: inherit; text-decoration: none; }
 .btn {
   border: var(--line); border-radius: 999px; padding: 11px 20px;
   font-weight: 700; font-size: 15px; cursor: pointer;
-  background: var(--paper); box-shadow: 3px 3px 0 var(--ink);
+  background: var(--paper); box-shadow: 3px 3px 0 var(--shadow-c);
   transition: transform .12s, box-shadow .12s, background .2s;
   display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
 }
-.btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
-.btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--shadow-c); }
+.btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shadow-c); }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
-.btn-solid { background: var(--acid); }
-.btn-add { background: var(--ink); color: var(--paper); }
+.btn-solid { background: var(--acid); color: var(--on-acid); }
+.btn-ghost { background: var(--surface); color: var(--ink); }
+.btn-add { background: var(--pill-bg); color: var(--pill-fg); }
 .btn.big { padding: 15px 28px; font-size: 17px; }
 .btn.full { width: 100%; justify-content: center; }
 
@@ -78,7 +114,7 @@ a { color: inherit; text-decoration: none; }
   position: sticky; top: 0; z-index: 50;
   display: flex; align-items: center; gap: 20px;
   padding: 14px clamp(16px, 4vw, 48px);
-  background: rgba(244, 241, 234, .82);
+  background: color-mix(in srgb, var(--paper) 84%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: var(--line);
 }
@@ -98,7 +134,7 @@ a { color: inherit; text-decoration: none; }
   border: 0; background: transparent; padding: 8px 13px;
   font-weight: 700; font-size: 13px; cursor: pointer;
 }
-.lang-switch button.on { background: var(--ink); color: var(--acid); }
+.lang-switch button.on { background: var(--pill-bg); color: var(--pill-fg); }
 
 /* ── герой ── */
 .hero {
@@ -114,7 +150,7 @@ a { color: inherit; text-decoration: none; }
 
 .badge {
   display: inline-block; border: var(--line); border-radius: 999px;
-  padding: 7px 16px; background: #fff; font-weight: 600; font-size: 14px;
+  padding: 7px 16px; background: var(--surface); font-weight: 600; font-size: 14px;
   box-shadow: var(--shadow); rotate: -1.5deg; margin-bottom: 26px;
 }
 
@@ -127,7 +163,8 @@ a { color: inherit; text-decoration: none; }
 }
 .hw0 { }
 .hw1 {
-  background: var(--acid); border: var(--line); border-radius: var(--r);
+  background: var(--acid); color: var(--on-acid);
+  border: var(--line); border-radius: var(--r);
   padding: 0 clamp(6px, 2vw, 16px); box-shadow: var(--shadow-lg);
 }
 .hw2 { -webkit-text-stroke: 3px var(--ink); color: transparent; }
@@ -142,7 +179,7 @@ a { color: inherit; text-decoration: none; }
 
 .hero-tee { position: relative; z-index: 1; display: grid; place-items: center; }
 /* Реалистичной ткани идёт мягкая тень, а не брутальная плашка. */
-.hero-tee .tee { width: min(100%, 430px); filter: drop-shadow(0 18px 26px rgba(18, 16, 14, .28)); }
+.hero-tee .tee { width: min(100%, 430px); filter: drop-shadow(0 18px 26px color-mix(in srgb, var(--shadow-c) 45%, transparent)); }
 
 /* ── футболка ── */
 .tee { width: 100%; height: auto; display: block; }
@@ -157,7 +194,7 @@ a { color: inherit; text-decoration: none; }
 /* ── бегущая строка ── */
 .ticker {
   border-top: var(--line); border-bottom: var(--line);
-  background: var(--ink); color: var(--acid); overflow: hidden; padding: 12px 0;
+  background: var(--band-bg); color: var(--acid); overflow: hidden; padding: 12px 0;
 }
 .ticker-row { display: flex; white-space: nowrap; font-family: 'Unbounded'; font-size: 30px; font-weight: 900; }
 .ticker-row span { padding-right: 26px; }
@@ -171,7 +208,7 @@ a { color: inherit; text-decoration: none; }
 .drop-title { font-weight: 700; letter-spacing: .06em; font-size: 14px; }
 .drop-nums { display: flex; gap: 10px; }
 .drop-cell {
-  background: var(--ink); border-radius: 12px; padding: 10px 14px;
+  background: var(--band-bg); border-radius: 12px; padding: 10px 14px;
   display: flex; flex-direction: column; align-items: center; min-width: 62px;
 }
 .drop-cell b { font-size: 26px; color: var(--acid); line-height: 1; }
@@ -186,14 +223,15 @@ a { color: inherit; text-decoration: none; }
 .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 34px; }
 
 .chip {
-  border: 2px solid var(--ink); background: transparent; border-radius: 999px;
+  border: 2px solid var(--ink); background: transparent; color: var(--ink);
+  border-radius: 999px;
   padding: 5px 12px; font-size: 13px; font-weight: 700; cursor: pointer;
   transition: all .15s;
 }
-.chip:hover { background: var(--ink); color: var(--paper); }
-.chip.on { background: var(--ink); color: var(--acid); }
+.chip:hover { background: var(--pill-bg); color: var(--pill-fg); }
+.chip.on { background: var(--pill-bg); color: var(--pill-fg); }
 .chip.big { padding: 9px 18px; font-size: 15px; border-width: 3px; }
-.chip.big.on { box-shadow: 3px 3px 0 var(--ink); }
+.chip.big.on { box-shadow: 3px 3px 0 var(--shadow-c); }
 
 /* ── сетка карточек ── */
 .grid {
@@ -201,7 +239,7 @@ a { color: inherit; text-decoration: none; }
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
 .card {
-  background: #fff; border: var(--line); border-radius: var(--r);
+  background: var(--surface); border: var(--line); border-radius: var(--r);
   padding: 18px; box-shadow: var(--shadow); position: relative;
   display: flex; flex-direction: column; gap: 12px;
 }
@@ -219,12 +257,6 @@ a { color: inherit; text-decoration: none; }
 .card h3 { font-size: 20px; line-height: 1.15; }
 .card-sub { font-size: 14px; opacity: .62; line-height: 1.4; }
 
-.lol { display: flex; flex-direction: column; gap: 6px; }
-.lol-head { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; letter-spacing: .04em; }
-.lol-head b { color: var(--hot); }
-.lol-bar { height: 12px; border: 2px solid var(--ink); border-radius: 999px; overflow: hidden; background: var(--paper); }
-.lol-fill { height: 100%; background: repeating-linear-gradient(45deg, var(--acid) 0 8px, var(--hot) 8px 16px); }
-
 .sizes { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .sizes-label { font-size: 12px; opacity: .6; margin-right: 4px; }
 
@@ -232,11 +264,11 @@ a { color: inherit; text-decoration: none; }
 .price { font-size: 21px; font-weight: 800; }
 
 /* ── как это работает ── */
-.how { background: var(--ink); color: var(--paper); border-top: var(--line); border-bottom: var(--line); }
+.how { background: var(--band-bg); color: var(--band-fg); border-top: var(--line); border-bottom: var(--line); }
 .how .section-head h2 { color: var(--acid); }
 .steps { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .step {
-  border: 3px solid var(--paper); border-radius: var(--r); padding: 26px;
+  border: 3px solid var(--band-fg); border-radius: var(--r); padding: 26px;
   position: relative; background: rgba(255, 255, 255, .04);
 }
 .step-num { font-family: 'Unbounded'; font-size: 13px; color: var(--hot); font-weight: 800; }
@@ -265,7 +297,7 @@ a { color: inherit; text-decoration: none; }
 }
 .drawer-head { display: flex; align-items: center; padding: 20px; border-bottom: var(--line); }
 .drawer-head h3 { font-size: 24px; }
-.x { margin-left: auto; border: var(--line); background: #fff; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 15px; }
+.x { margin-left: auto; border: var(--line); background: var(--surface); border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 15px; }
 .x.float { position: absolute; top: 14px; right: 14px; margin: 0; }
 .empty { padding: 40px 20px; text-align: center; opacity: .55; }
 .drawer-list { flex: 1; overflow-y: auto; padding: 14px 20px; display: flex; flex-direction: column; gap: 14px; }
@@ -291,8 +323,8 @@ a { color: inherit; text-decoration: none; }
   display: flex; flex-direction: column; gap: 16px;
 }
 .wcard {
-  background: linear-gradient(135deg, var(--ink) 0%, #2b2620 100%);
-  color: var(--paper); border-radius: 18px; padding: 20px; border: var(--line);
+  background: linear-gradient(135deg, #17130f 0%, #2b2620 100%);
+  color: #f4f1ea; border-radius: 18px; padding: 20px; border: var(--line);
   display: flex; flex-direction: column; gap: 18px;
 }
 .wcard-top { display: flex; align-items: center; gap: 10px; font-size: 13px; letter-spacing: .1em; opacity: .8; text-transform: uppercase; }
@@ -305,27 +337,17 @@ a { color: inherit; text-decoration: none; }
 
 .toast {
   position: fixed; z-index: 80; bottom: 26px; left: 50%; translate: -50% 0;
-  background: var(--ink); color: var(--acid); border-radius: 999px;
+  background: var(--band-bg); color: var(--acid); border-radius: 999px;
   padding: 14px 26px; font-weight: 700; box-shadow: var(--shadow);
   max-width: calc(100% - 32px); text-align: center;
-}
-
-/* ── баннер «не настроено» ── */
-.setup-banner {
-  background: var(--acid); border-bottom: var(--line);
-  padding: 10px 16px; text-align: center; font-weight: 700; font-size: 14px;
-}
-.warn {
-  background: #fff3cd; border: 2px solid var(--ink); border-radius: 12px;
-  padding: 10px 12px; font-size: 13px; font-weight: 600;
 }
 
 /* ── сердечко на карточке ── */
 .fav {
   position: absolute; top: 12px; left: 12px; z-index: 3;
   width: 38px; height: 38px; border: var(--line); border-radius: 50%;
-  background: #fff; cursor: pointer; font-size: 16px; line-height: 1;
-  box-shadow: 2px 2px 0 var(--ink); transition: transform .12s;
+  background: var(--surface); cursor: pointer; font-size: 16px; line-height: 1;
+  box-shadow: 2px 2px 0 var(--shadow-c); transition: transform .12s;
 }
 .fav:hover { transform: scale(1.1); }
 .fav.on { background: var(--acid); }
@@ -337,45 +359,6 @@ a { color: inherit; text-decoration: none; }
   border: 2px solid var(--ink); display: grid; place-items: center; font-size: 15px;
 }
 .acc-bal { font-size: 14px; }
-
-/* ── модалка авторизации ── */
-.auth-modal { gap: 14px; }
-.auth-head { display: flex; gap: 12px; align-items: center; }
-.auth-head h3 { font-size: 24px; line-height: 1.1; }
-.auth-head .muted { margin-top: 4px; }
-
-.auth-tabs { display: flex; gap: 4px; background: rgba(0,0,0,.06); border-radius: 999px; padding: 4px; }
-.auth-tabs button {
-  flex: 1; position: relative; border: 0; background: transparent; cursor: pointer;
-  padding: 10px; font-weight: 700; font-size: 14px; border-radius: 999px; color: var(--ink);
-}
-.auth-tabs button.on { color: var(--acid); }
-.auth-pill {
-  position: absolute; inset: 0; background: var(--ink);
-  border-radius: 999px; z-index: -1;
-}
-
-.auth-form { display: flex; flex-direction: column; gap: 12px; }
-.auth-form label, .acc-field { display: flex; flex-direction: column; gap: 6px; }
-.auth-form label span, .acc-field > span { font-size: 12px; font-weight: 700; opacity: .65; letter-spacing: .04em; }
-.auth-form input, .acc-field input {
-  border: var(--line); border-radius: 12px; padding: 12px 14px;
-  font-size: 15px; background: #fff; font-family: inherit; width: 100%;
-}
-.auth-form input:focus, .acc-field input:focus { outline: 3px solid var(--acid); outline-offset: 1px; }
-.auth-form input:disabled { background: #eee; cursor: not-allowed; }
-
-.auth-err {
-  background: var(--hot); color: #fff; border: var(--line); border-radius: 12px;
-  padding: 10px 12px; font-size: 14px; font-weight: 600;
-}
-
-.auth-or { display: flex; align-items: center; gap: 12px; opacity: .5; font-size: 13px; }
-.auth-or::before, .auth-or::after { content: ''; flex: 1; height: 2px; background: currentColor; }
-
-.btn.google { justify-content: center; background: #fff; }
-.auth-swap { font-size: 13px; }
-.auth-swap .link { font-size: 13px; }
 
 /* ── кабинет ── */
 .account .acc-tabs {
@@ -392,7 +375,7 @@ a { color: inherit; text-decoration: none; }
 .acc-stats { display: flex; gap: 10px; }
 .acc-stats div {
   flex: 1; border: 2px solid var(--ink); border-radius: 12px; padding: 10px;
-  display: flex; flex-direction: column; gap: 2px; background: #fff;
+  display: flex; flex-direction: column; gap: 2px; background: var(--surface);
 }
 .acc-stats b { font-family: 'Unbounded'; font-size: 15px; }
 .acc-stats span { font-size: 11px; opacity: .6; }
@@ -400,18 +383,18 @@ a { color: inherit; text-decoration: none; }
 .emoji-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .emoji {
   width: 38px; height: 38px; border: 2px solid var(--ink); border-radius: 10px;
-  background: #fff; cursor: pointer; font-size: 18px; line-height: 1;
+  background: var(--surface); cursor: pointer; font-size: 18px; line-height: 1;
 }
-.emoji.on { background: var(--acid); box-shadow: 2px 2px 0 var(--ink); }
+.emoji.on { background: var(--acid); box-shadow: 2px 2px 0 var(--shadow-c); }
 
-.order { border: var(--line); border-radius: 14px; padding: 14px; background: #fff; }
+.order { border: var(--line); border-radius: 14px; padding: 14px; background: var(--surface); }
 .order-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; }
 .order-top span { opacity: .55; }
 .order-items { list-style: none; margin: 10px 0; display: flex; flex-direction: column; gap: 4px; }
 .order-items li { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
 .order-bot { display: flex; justify-content: space-between; align-items: center; border-top: 2px dashed rgba(0,0,0,.15); padding-top: 10px; }
 .order-bot .price { font-size: 17px; }
-.coins-badge { background: var(--acid); border: 2px solid var(--ink); border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; }
+.coins-badge { background: var(--acid); color: var(--on-acid); border: 2px solid var(--ink); border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; }
 
 /* ── конструктор ── */
 .btn-hot { background: var(--hot); color: #fff; }
@@ -436,21 +419,21 @@ a { color: inherit; text-decoration: none; }
 .d-sides .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--hot); display: inline-block; }
 
 .d-tabs {
-  display: flex; gap: 4px; background: rgba(0,0,0,.06);
+  display: flex; gap: 4px; background: var(--tint);
   border-radius: 999px; padding: 4px; position: sticky; top: 0; z-index: 2;
 }
 .d-tabs button {
   flex: 1; border: 0; background: transparent; cursor: pointer; color: var(--ink);
   padding: 9px 4px; font-weight: 700; font-size: 13px; border-radius: 999px; white-space: nowrap;
 }
-.d-tabs button.on { background: var(--ink); color: var(--acid); }
+.d-tabs button.on { background: var(--pill-bg); color: var(--pill-fg); }
 .d-pane { display: flex; flex-direction: column; gap: 13px; }
 
 .d-tpls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .tpl {
-  border: var(--line); border-radius: 12px; background: #fff; cursor: pointer;
+  border: var(--line); border-radius: 12px; background: var(--surface); cursor: pointer;
   padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; text-align: left;
-  box-shadow: 3px 3px 0 var(--ink); transition: transform .12s;
+  box-shadow: 3px 3px 0 var(--shadow-c); transition: transform .12s;
 }
 .tpl:hover { transform: translate(-2px, -2px); }
 .tpl b { font-size: 13px; }
@@ -458,18 +441,18 @@ a { color: inherit; text-decoration: none; }
 
 .d-fonts { display: flex; gap: 6px; flex-wrap: wrap; }
 .fontbtn {
-  border: 2px solid var(--ink); background: #fff; border-radius: 10px;
+  border: 2px solid var(--ink); background: var(--surface); border-radius: 10px;
   padding: 7px 12px; font-size: 14px; cursor: pointer; transition: all .15s;
 }
 .fontbtn:hover { transform: translateY(-2px); }
-.fontbtn.on { background: var(--ink); color: var(--acid); }
+.fontbtn.on { background: var(--pill-bg); color: var(--pill-fg); }
 
 .d-controls { display: flex; flex-direction: column; gap: 14px; }
 .d-field { display: flex; flex-direction: column; gap: 7px; }
 .d-field > span { font-size: 12px; font-weight: 700; opacity: .65; letter-spacing: .04em; }
 .d-field textarea {
   border: var(--line); border-radius: 12px; padding: 11px 13px;
-  font-family: inherit; font-size: 15px; resize: vertical; background: #fff;
+  font-family: inherit; font-size: 15px; resize: vertical; background: var(--surface);
   min-height: 76px; width: 100%;
 }
 .d-field textarea:focus { outline: 3px solid var(--acid); outline-offset: 1px; }
@@ -483,7 +466,7 @@ a { color: inherit; text-decoration: none; }
 }
 .swatch.small { width: 30px; height: 30px; border-radius: 8px; }
 .swatch:hover { transform: scale(1.08); }
-.swatch.on { box-shadow: 0 0 0 3px var(--acid), 3px 3px 0 var(--ink); }
+.swatch.on { box-shadow: 0 0 0 3px var(--acid), 3px 3px 0 var(--shadow-c); }
 
 .d-check { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
 .d-check input { width: 18px; height: 18px; accent-color: var(--hot); }
@@ -536,3 +519,41 @@ a { color: inherit; text-decoration: none; }
   * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
   .trail { display: none; }
 }
+
+/* ── оплата и количество ── */
+.btn-icon { padding: 10px 12px; font-size: 16px; line-height: 1; }
+
+.qty { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.qty button {
+  width: 26px; height: 26px; border: 2px solid var(--ink); border-radius: 8px;
+  background: var(--surface); color: var(--ink); cursor: pointer;
+  font-size: 15px; font-weight: 700; line-height: 1; display: grid; place-items: center;
+}
+.qty button:hover { background: var(--pill-bg); color: var(--pill-fg); }
+.qty > b { min-width: 18px; text-align: center; font-size: 14px; }
+.qty .link { margin-left: 6px; }
+
+.pay-methods { display: flex; flex-direction: column; gap: 8px; padding-bottom: 4px; }
+.pay-label { font-size: 12px; font-weight: 700; opacity: .65; letter-spacing: .04em; }
+.pay-methods .chip.big { flex: 1; justify-content: center; }
+.pay-tag {
+  border: 2px solid var(--ink); border-radius: 999px; padding: 3px 10px;
+  font-size: 12px; font-weight: 700;
+}
+.order-bot { gap: 8px; flex-wrap: wrap; }
+
+/* ── иконки ── */
+.icon { flex-shrink: 0; display: block; }
+.with-icon { display: inline-flex; align-items: center; gap: 6px; }
+.logo { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.logo-word { display: inline-flex; align-items: baseline; }
+.logo-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--hot);
+  display: inline-block; margin-left: 4px; align-self: flex-end; margin-bottom: 4px;
+}
+.fav { display: grid; place-items: center; color: var(--ink); }
+.fav.on { color: var(--hot); }
+.x { display: grid; place-items: center; color: inherit; }
+.step-icon { position: absolute; top: 18px; right: 20px; opacity: .85; }
+.pay-tag, .coins-badge { display: inline-flex; align-items: center; gap: 5px; }
+.qty button { display: grid; place-items: center; }

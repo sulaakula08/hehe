@@ -2,14 +2,18 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useScroll, useSpring } from 'framer-motion'
 import Logo from './components/Logo.jsx'
 import Tshirt from './components/Tshirt.jsx'
-import AuthModal from './components/AuthModal.jsx'
 import Account from './components/Account.jsx'
 import Designer from './components/Designer.jsx'
-import { useAuth } from './auth.jsx'
+import Icon from './components/Icon.jsx'
 import { PRODUCTS, RARITY, SIZES, T, fmt, CUSTOM_PRICE } from './data.js'
 
 const load = (k, d) => {
   try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch { return d }
+}
+const save = (k, v) => {
+  // Дизайны из конструктора хранят картинку, поэтому запись может упереться
+  // в квоту localStorage — состояние в памяти при этом остаётся целым.
+  try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* переполнили квоту */ }
 }
 
 /* ─────────────── бегущая строка ─────────────── */
@@ -25,27 +29,6 @@ function Ticker({ text }) {
           <span key={i}>{text} <b>✱</b> </span>
         ))}
       </motion.div>
-    </div>
-  )
-}
-
-/* ─────────────── ЛОЛ-метр ─────────────── */
-function LolMeter({ value, label }) {
-  return (
-    <div className="lol">
-      <div className="lol-head">
-        <span>{label}</span>
-        <b>{value}</b>
-      </div>
-      <div className="lol-bar">
-        <motion.div
-          className="lol-fill"
-          initial={{ width: 0 }}
-          whileInView={{ width: `${value}%` }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-        />
-      </div>
     </div>
   )
 }
@@ -86,7 +69,7 @@ function Card({ p, lang, t, onAdd, flash, isFav, onFav }) {
         aria-label={t.to_fav}
         title={t.to_fav}
       >
-        {isFav ? '❤️' : '🤍'}
+        <Icon name="heart" size={17} style={{ fill: isFav ? 'currentColor' : 'none' }} />
       </motion.button>
 
       <div className="card-media" style={{ background: `radial-gradient(circle at 50% 40%, ${p.color}22, transparent 70%)` }}>
@@ -95,8 +78,6 @@ function Card({ p, lang, t, onAdd, flash, isFav, onFav }) {
 
       <h3>{p[lang].title}</h3>
       <p className="card-sub">{p[lang].sub}</p>
-
-      <LolMeter value={p.lol} label={t.lol_meter} />
 
       <div className="sizes">
         <span className="sizes-label">{t.size}</span>
@@ -157,16 +138,16 @@ function Countdown({ t }) {
 
 /* ─────────────── приложение ─────────────── */
 export default function App() {
-  const auth = useAuth()
-  const { user, profile, favorites, ready, isConfigured } = auth
-
   const [lang, setLang] = useState(() => load('hehe.lang', 'ru'))
-  const [cart, setCart] = useState(() => load('hehe.cart', []))   // корзина живёт локально до оплаты
+  const [theme, setTheme] = useState(() => load('hehe.theme', null)
+    ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
+  const [cart, setCart] = useState(() => load('hehe.cart', []))
+  const [wallet, setWallet] = useState(() => load('hehe.wallet', { balance: 25000, coins: 0 }))
+  const [favorites, setFavorites] = useState(() => load('hehe.fav', []))
+  const [orders, setOrders] = useState(() => load('hehe.orders', []))
+  const [payMethod, setPayMethod] = useState(() => load('hehe.pay', 'card'))
+
   const [openCart, setOpenCart] = useState(false)
-  const [openAuth, setOpenAuth] = useState(null)   // null | 'in' | 'up'
-  // Счётчик открытий: пока идёт exit-анимация, React переиспользует инстанс модалки
-  // и она открывается в том режиме, в котором её закрыли. Новый ключ = чистое состояние.
-  const [authSeq, setAuthSeq] = useState(0)
   const [openAccount, setOpenAccount] = useState(false)
   const [openDesigner, setOpenDesigner] = useState(false)
   const [toast, setToast] = useState(null)
@@ -175,14 +156,17 @@ export default function App() {
   const [paying, setPaying] = useState(false)
   const t = T[lang]
 
-  useEffect(() => localStorage.setItem('hehe.lang', JSON.stringify(lang)), [lang])
-  // Дизайны из конструктора хранят картинку прямо в корзине, поэтому запись
-  // может упереться в квоту localStorage — корзина в памяти при этом остаётся целой.
-  useEffect(() => {
-    try { localStorage.setItem('hehe.cart', JSON.stringify(cart)) }
-    catch { /* переполнили квоту — просто не сохраняем между перезагрузками */ }
-  }, [cart])
+  useEffect(() => save('hehe.lang', lang), [lang])
+  useEffect(() => save('hehe.cart', cart), [cart])
+  useEffect(() => save('hehe.wallet', wallet), [wallet])
+  useEffect(() => save('hehe.fav', favorites), [favorites])
+  useEffect(() => save('hehe.orders', orders), [orders])
+  useEffect(() => save('hehe.pay', payMethod), [payMethod])
   useEffect(() => { document.documentElement.lang = lang === 'ru' ? 'ru' : 'kk' }, [lang])
+  useEffect(() => {
+    save('hehe.theme', theme)
+    document.documentElement.dataset.theme = theme
+  }, [theme])
 
   const { scrollYProgress } = useScroll()
   const bar = useSpring(scrollYProgress, { stiffness: 120, damping: 24 })
@@ -205,11 +189,8 @@ export default function App() {
     })
   }
 
-  // Дизайн из конструктора — отдельная позиция: он не лежит в PRODUCTS,
-  // поэтому носит свои данные прямо в строке корзины.
   const addCustomToCart = (design, size) => {
-    const key = `custom-${Date.now()}`
-    setCart((c) => [...c, { key, id: 'custom', size, qty: 1, custom: design }])
+    setCart((c) => [...c, { key: `custom-${Date.now()}`, id: 'custom', size, qty: 1, custom: design }])
   }
 
   /** Приводит строку корзины к единому виду: что рисовать, как назвать, почём. */
@@ -221,7 +202,6 @@ export default function App() {
       const front = i.custom.front ?? (i.custom.text != null || i.custom.image ? i.custom : null)
       const back = i.custom.back ?? null
       const has = (s) => s && (s.image || (s.text ?? '').trim() !== '')
-      // Показываем ту сторону, на которой что-то есть; перёд в приоритете.
       const shown = has(front) ? front : back
       const firstText = (front?.text || back?.text || '').split('\n')[0]
       const both = has(front) && has(back)
@@ -231,11 +211,7 @@ export default function App() {
       return {
         price: CUSTOM_PRICE,
         title: label,
-        product: {
-          id: i.key, color: fabric, ink,
-          custom: { ...shown, fabric, ink },
-          ru: {}, kk: {},
-        },
+        product: { id: i.key, color: fabric, ink, custom: { ...shown, fabric, ink }, ru: {}, kk: {} },
       }
     }
     const p = PRODUCTS.find((x) => x.id === i.id)
@@ -243,44 +219,53 @@ export default function App() {
   }
 
   const removeFromCart = (key) => setCart((c) => c.filter((i) => i.key !== key))
+  const setQty = (key, delta) => setCart((c) => c
+    .map((i) => (i.key === key ? { ...i, qty: i.qty + delta } : i))
+    .filter((i) => i.qty > 0))
 
   const total = cart.reduce((s, i) => s + resolveItem(i).price * i.qty, 0)
   const count = cart.reduce((s, i) => s + i.qty, 0)
+  const cashback = Math.round(total * 0.07)
 
-  const openAuthModal = (mode = 'in') => {
-    setOpenCart(false)
-    setAuthSeq((n) => n + 1)
-    setOpenAuth(mode)
-  }
-  const needAuth = openAuthModal
-
+  /** Оплата пока фейковая: карта всегда проходит, кошелёк проверяет баланс. */
   const checkout = async () => {
     if (!cart.length || paying) return
-    if (!user) { say(t.login_to_buy); return needAuth('in') }
+    if (payMethod === 'wallet' && wallet.balance < total) return say(t.pay_fail)
 
     setPaying(true)
-    try {
-      // Картинку дизайна в заказ не кладём — она раздула бы строку в базе.
-      const items = cart.map((i) => {
+    if (payMethod === 'card') {
+      say(t.authorizing)
+      await new Promise((r) => setTimeout(r, 900))   // имитация авторизации
+    }
+
+    const order = {
+      id: `${Date.now()}`,
+      created_at: new Date().toISOString(),
+      method: payMethod,
+      total,
+      coins_earned: payMethod === 'wallet' ? cashback : 0,
+      items: cart.map((i) => {
         const { price, title } = resolveItem(i)
         return { id: i.id, size: i.size, qty: i.qty, price, title }
-      })
-      const order = await auth.checkout(items)
-      setCart([])
-      setOpenCart(false)
-      say(`${t.pay_ok} +${order.coins_earned} ${t.added_coins}`)
-    } catch (e) {
-      say(t[e.message] || t.err_generic)
-    } finally {
-      setPaying(false)
+      }),
     }
+
+    if (payMethod === 'wallet') {
+      setWallet((w) => ({ balance: w.balance - total, coins: w.coins + cashback }))
+    }
+    setOrders((o) => [order, ...o])
+    setCart([])
+    setPaying(false)
+    setOpenCart(false)
+    say(payMethod === 'wallet' ? `${t.pay_ok} +${cashback} ${t.added_coins}` : t.pay_ok)
   }
 
-  const onFav = async (p) => {
-    if (!user) { say(t.login_to_fav); return needAuth('in') }
-    try { await auth.toggleFavorite(p.id) }
-    catch (e) { say(t[e.message] || t.err_generic) }
+  const topup = (amount) => {
+    setWallet((w) => ({ ...w, balance: w.balance + amount }))
+    say(`${t.topup_added}: +${fmt(amount)}`)
   }
+
+  const onFav = (p) => setFavorites((f) => (f.includes(p.id) ? f.filter((x) => x !== p.id) : [...f, p.id]))
 
   const random = () => {
     const p = PRODUCTS[Math.floor(Math.random() * PRODUCTS.length)]
@@ -291,32 +276,8 @@ export default function App() {
 
   const shown = filter === 'all' ? PRODUCTS : PRODUCTS.filter((p) => p.rarity === filter)
 
-  /* хвост из эмодзи за курсором */
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const emo = ['😂', '💀', '🤡', '😭', '🗿', '✨']
-    let last = 0
-    const onMove = (e) => {
-      const now = Date.now()
-      if (now - last < 110) return
-      last = now
-      const el = document.createElement('span')
-      el.className = 'trail'
-      el.textContent = emo[Math.floor(Math.random() * emo.length)]
-      el.style.left = e.clientX + 'px'
-      el.style.top = e.clientY + 'px'
-      document.body.appendChild(el)
-      setTimeout(() => el.remove(), 900)
-    }
-    window.addEventListener('pointermove', onMove)
-    return () => window.removeEventListener('pointermove', onMove)
-  }, [])
-
-  const anyOverlay = openCart || Boolean(openAuth) || openAccount || openDesigner
-
-  const closeOverlays = () => {
-    setOpenCart(false); setOpenAuth(null); setOpenAccount(false); setOpenDesigner(false)
-  }
+  const anyOverlay = openCart || openAccount || openDesigner
+  const closeOverlays = () => { setOpenCart(false); setOpenAccount(false); setOpenDesigner(false) }
 
   return (
     <>
@@ -330,6 +291,15 @@ export default function App() {
           <a href="#how">{t.nav_how}</a>
         </nav>
         <div className="nav-right">
+          <button
+            className="btn btn-icon"
+            onClick={() => setTheme((th) => (th === 'dark' ? 'light' : 'dark'))}
+            title={theme === 'dark' ? t.theme_light : t.theme_dark}
+            aria-label={theme === 'dark' ? t.theme_light : t.theme_dark}
+          >
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={17} />
+          </button>
+
           <div className="lang-switch">
             {['ru', 'kk'].map((l) => (
               <button key={l} className={lang === l ? 'on' : ''} onClick={() => setLang(l)}>
@@ -338,16 +308,9 @@ export default function App() {
             ))}
           </div>
 
-          {ready && (user ? (
-            <button className="btn btn-ghost acc-btn" onClick={() => setOpenAccount(true)}>
-              <span className="acc-avatar">{profile?.emoji ?? '😎'}</span>
-              <span className="acc-bal">{fmt(profile?.balance ?? 0)}</span>
-            </button>
-          ) : (
-            <button className="btn btn-ghost" onClick={() => openAuthModal('in')}>
-              👤 {t.login}
-            </button>
-          ))}
+          <button className="btn btn-ghost" onClick={() => setOpenAccount(true)}>
+            <Icon name="wallet" /> {fmt(wallet.balance)}
+          </button>
 
           <motion.button
             className="btn btn-solid"
@@ -355,12 +318,10 @@ export default function App() {
             animate={count ? { scale: [1, 1.12, 1] } : {}}
             key={count}
           >
-            🛒 {count}
+            <Icon name="cart" /> {count}
           </motion.button>
         </div>
       </header>
-
-      {!isConfigured && <div className="setup-banner">{t.not_setup}</div>}
 
       {/* ── герой ── */}
       <section className="hero">
@@ -391,8 +352,12 @@ export default function App() {
 
           <motion.div className="hero-cta" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
             <a href="#catalog" className="btn btn-solid big">{t.cta_shop}</a>
-            <button className="btn btn-hot big" onClick={() => setOpenDesigner(true)}>{t.designer_open}</button>
-            <button className="btn btn-ghost big" onClick={random}>{t.cta_random}</button>
+            <button className="btn btn-hot big" onClick={() => setOpenDesigner(true)}>
+              <Icon name="brush" /> {t.designer_open}
+            </button>
+            <button className="btn btn-ghost big" onClick={random}>
+              <Icon name="dice" /> {t.cta_random}
+            </button>
           </motion.div>
 
           <div className="stats">
@@ -409,7 +374,7 @@ export default function App() {
           transition={{ delay: 0.3, type: 'spring', stiffness: 70, damping: 14 }}
         >
           <motion.div animate={{ y: [0, -14, 0] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}>
-            <Tshirt product={PRODUCTS[3]} lang={lang} hovered big />
+            <Tshirt product={PRODUCTS[5]} lang={lang} hovered big />
           </motion.div>
         </motion.div>
       </section>
@@ -425,7 +390,7 @@ export default function App() {
             <p>{t.catalog_sub}</p>
           </div>
           <button className="btn btn-hot big" onClick={() => setOpenDesigner(true)}>
-            {t.designer_open}
+            <Icon name="brush" /> {t.designer_open}
           </button>
         </div>
 
@@ -462,14 +427,14 @@ export default function App() {
       <section id="how" className="section how">
         <div className="section-head"><h2>{t.how_title}</h2></div>
         <div className="steps">
-          {[[t.how_1_t, t.how_1_d, '🎯'], [t.how_2_t, t.how_2_d, '💳'], [t.how_3_t, t.how_3_d, '🚶']].map(([ti, de, e], i) => (
+          {[[t.how_1_t, t.how_1_d, 'target'], [t.how_2_t, t.how_2_d, 'card'], [t.how_3_t, t.how_3_d, 'shirt']].map(([ti, de, e], i) => (
             <motion.div
               key={ti} className="step"
               initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }} transition={{ delay: i * 0.12 }}
             >
               <span className="step-num">0{i + 1}</span>
-              <span className="step-emoji">{e}</span>
+              <span className="step-icon"><Icon name={e} size={26} /></span>
               <h4>{ti}</h4>
               <p>{de}</p>
             </motion.div>
@@ -483,98 +448,111 @@ export default function App() {
         <span>© {new Date().getFullYear()} ХЕХЕ</span>
       </footer>
 
-      {/* ── оверлеи ── */}
-      {/* Каждый оверлей — в своём AnimatePresence: с одним общим и меняющимися
-          ключами framer оставляет выходящие узлы висеть в DOM.
-
-          Обёртка гасит клики, когда не открыто ничего: если анимация закрытия
-          не доиграет (например, вкладка ушла в фон и rAF встал), невидимый
-          оверлей всё равно не перехватит клики по странице. */}
+      {/* Обёртка гасит клики, когда не открыто ничего: если анимация закрытия
+          не доиграет, невидимый оверлей не перехватит клики по странице. */}
       <div className="overlay-root" style={{ pointerEvents: anyOverlay ? 'auto' : 'none' }}>
-      <AnimatePresence>
-        {anyOverlay && (
-          <motion.div key="scrim" className="scrim"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={closeOverlays} />
-        )}
-      </AnimatePresence>
+        <AnimatePresence>
+          {anyOverlay && (
+            <motion.div key="scrim" className="scrim"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={closeOverlays} />
+          )}
+        </AnimatePresence>
 
-      <AnimatePresence>
-        {openCart && (
-          <motion.aside
-            key="cart" className="drawer"
-            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-            transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-          >
-            <div className="drawer-head">
-              <h3>{t.cart}</h3>
-              <button className="x" onClick={() => setOpenCart(false)} aria-label="close">✕</button>
-            </div>
+        <AnimatePresence>
+          {openCart && (
+            <motion.aside
+              key="cart" className="drawer"
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+            >
+              <div className="drawer-head">
+                <h3>{t.cart}</h3>
+                <button className="x" onClick={() => setOpenCart(false)} aria-label="close"><Icon name="close" size={15} /></button>
+              </div>
 
-            {!cart.length && <p className="empty">{t.cart_empty}</p>}
+              {!cart.length && <p className="empty">{t.cart_empty}</p>}
 
-            <div className="drawer-list">
-              {cart.map((i) => {
-                const { product, title, price } = resolveItem(i)
-                return (
-                  <motion.div key={i.key} layout className="line"
-                    initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 30 }}>
-                    <div className="line-thumb" style={{ background: product.color }}>
-                      <Tshirt product={product} lang={lang} />
-                    </div>
-                    <div className="line-info">
-                      <b>{title}</b>
-                      <span>{i.size} · ×{i.qty}</span>
-                      <button className="link" onClick={() => removeFromCart(i.key)}>{t.remove}</button>
-                    </div>
-                    <span className="line-price">{fmt(price * i.qty)}</span>
-                  </motion.div>
-                )
-              })}
-            </div>
+              <div className="drawer-list">
+                {cart.map((i) => {
+                  const { product, title, price } = resolveItem(i)
+                  return (
+                    <motion.div key={i.key} layout className="line"
+                      initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 30 }}>
+                      <div className="line-thumb" style={{ background: product.color }}>
+                        <Tshirt product={product} lang={lang} />
+                      </div>
+                      <div className="line-info">
+                        <b>{title}</b>
+                        <span>{i.size}</span>
+                        <div className="qty">
+                          <button onClick={() => setQty(i.key, -1)} aria-label="−"><Icon name="minus" size={14} /></button>
+                          <b>{i.qty}</b>
+                          <button onClick={() => setQty(i.key, +1)} aria-label="+"><Icon name="plus" size={14} /></button>
+                          <button className="link" onClick={() => removeFromCart(i.key)}>{t.remove}</button>
+                        </div>
+                      </div>
+                      <span className="line-price">{fmt(price * i.qty)}</span>
+                    </motion.div>
+                  )
+                })}
+              </div>
 
-            <div className="drawer-foot">
-              <div className="row"><span>{t.total}</span><b>{fmt(total)}</b></div>
-              <div className="row muted"><span>{t.cashback}</span><b>🪙 +{Math.round(total * 0.07)}</b></div>
-              {user && (
-                <div className="row muted"><span>{t.balance}</span><b>{fmt(profile?.balance ?? 0)}</b></div>
-              )}
-              <button className="btn btn-solid full" onClick={checkout} disabled={!cart.length || paying}>
-                {paying ? t.processing : user ? t.checkout : t.login_to_buy}
-              </button>
-            </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
+              <div className="drawer-foot">
+                <div className="pay-methods">
+                  <span className="pay-label">{t.pay_method}</span>
+                  <div className="d-row">
+                    <button
+                      className={`chip big ${payMethod === 'card' ? 'on' : ''}`}
+                      onClick={() => setPayMethod('card')}
+                    >
+                      <Icon name="card" /> {t.pay_card} •••• 4242
+                    </button>
+                    <button
+                      className={`chip big ${payMethod === 'wallet' ? 'on' : ''}`}
+                      onClick={() => setPayMethod('wallet')}
+                    >
+                      <Icon name="wallet" /> {t.pay_wallet}
+                    </button>
+                  </div>
+                  <small className="muted">
+                    {payMethod === 'card' ? t.card_demo : `${t.balance}: ${fmt(wallet.balance)} · ${t.cashback}`}
+                  </small>
+                </div>
 
-      <AnimatePresence>
-        {openAuth && (
-          <AuthModal
-            key={`auth-${authSeq}`} t={t} startMode={openAuth}
-            onClose={() => setOpenAuth(null)} onDone={say}
-          />
-        )}
-      </AnimatePresence>
+                <div className="row"><span>{t.total}</span><b>{fmt(total)}</b></div>
+                {payMethod === 'wallet' && (
+                  <div className="row muted"><span>{t.cashback}</span><b className="with-icon"><Icon name="coin" size={15} /> +{cashback}</b></div>
+                )}
+                <button className="btn btn-solid full" onClick={checkout} disabled={!cart.length || paying}>
+                  {paying ? t.processing : t.checkout}
+                </button>
+              </div>
+            </motion.aside>
+          )}
+        </AnimatePresence>
 
-      <AnimatePresence>
-        {openDesigner && (
-          <Designer
-            key="designer" t={t} lang={lang}
-            onClose={() => setOpenDesigner(false)}
-            onAdd={addCustomToCart}
-            onToast={say}
-          />
-        )}
-      </AnimatePresence>
+        <AnimatePresence>
+          {openDesigner && (
+            <Designer
+              key="designer" t={t} lang={lang}
+              onClose={() => setOpenDesigner(false)}
+              onAdd={addCustomToCart}
+              onToast={say}
+            />
+          )}
+        </AnimatePresence>
 
-      <AnimatePresence>
-        {openAccount && user && (
-          <Account
-            key="account" t={t} lang={lang}
-            onClose={() => setOpenAccount(false)} onToast={say} onAddToCart={addToCart}
-          />
-        )}
-      </AnimatePresence>
+        <AnimatePresence>
+          {openAccount && (
+            <Account
+              key="account" t={t} lang={lang}
+              wallet={wallet} orders={orders} favorites={favorites}
+              onTopup={topup} onToggleFav={(id) => setFavorites((f) => f.filter((x) => x !== id))}
+              onClose={() => setOpenAccount(false)} onToast={say} onAddToCart={addToCart}
+            />
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── тост ── */}

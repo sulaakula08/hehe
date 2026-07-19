@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Tshirt, { PRINT_ZONE, TEXT_WIDTH } from './Tshirt.jsx'
+import Icon from './Icon.jsx'
 import { CUSTOM_COLORS, INK_COLORS, FONTS, TEMPLATES, CUSTOM_PRICE, SIZES, fmt } from '../data.js'
 
 const MAX_FILE = 8 * 1024 * 1024   // 8 МБ до сжатия
@@ -203,13 +204,13 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
       exit={{ opacity: 0, scale: 0.94, y: 24 }}
       transition={{ type: 'spring', stiffness: 240, damping: 24 }}
     >
-      <button className="x float" onClick={onClose} aria-label="close">✕</button>
+      <button className="x float" onClick={onClose} aria-label="close"><Icon name="close" size={15} /></button>
 
       <div className="d-head">
         <h3>{t.designer_title}</h3>
         <div className="d-undo">
-          <button className="btn" onClick={undo} disabled={!hist.current.past.length} title={`${t.d_undo} (Ctrl+Z)`}>↶</button>
-          <button className="btn" onClick={redo} disabled={!hist.current.future.length} title={`${t.d_redo} (Ctrl+Shift+Z)`}>↷</button>
+          <button className="btn" onClick={undo} disabled={!hist.current.past.length} title={`${t.d_undo} (Ctrl+Z)`}><Icon name="undo" size={17} /></button>
+          <button className="btn" onClick={redo} disabled={!hist.current.future.length} title={`${t.d_redo} (Ctrl+Shift+Z)`}><Icon name="redo" size={17} /></button>
         </div>
       </div>
 
@@ -235,7 +236,7 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
               editable onMove={move} onMoveStart={snapshot} back={d.side === 'back'}
             />
           </div>
-          <p className="d-hint muted">✋ {t.d_drag}</p>
+          <p className="d-hint muted with-icon"><Icon name="hand" size={14} /> {t.d_drag}</p>
         </div>
 
         {/* ── настройки ── */}
@@ -303,7 +304,9 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
                   <button className={`chip big ${cur.upper ? 'on' : ''}`}
                     onClick={() => edit({ upper: !cur.upper })}>{t.d_upper}</button>
                   <button className={`chip big ${cur.outline ? 'on' : ''}`}
-                    onClick={() => edit({ outline: !cur.outline })}>◍ {t.d_outline}</button>
+                    onClick={() => edit({ outline: !cur.outline })}>
+                    <Icon name="outline" size={15} /> {t.d_outline}
+                  </button>
                 </div>
               </div>
 
@@ -334,7 +337,7 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
                 <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
                 <div className="d-row">
                   <button className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>
-                    {busy ? t.processing : t.d_photo_add}
+                    <Icon name="image" /> {busy ? t.processing : t.d_photo_add}
                   </button>
                   {cur.image && (
                     <button className="btn" onClick={() => edit({ image: null })}>{t.d_photo_del}</button>

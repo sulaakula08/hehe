@@ -1,38 +1,28 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '../auth.jsx'
 import Tshirt from './Tshirt.jsx'
 import Logo from './Logo.jsx'
+import Icon from './Icon.jsx'
 import { PRODUCTS, fmt } from '../data.js'
 
-const EMOJI = ['😎', '😂', '🗿', '🤡', '👽', '🐈', '🍩', '🔥', '💀', '🧃']
-
-export default function Account({ t, lang, onClose, onToast, onAddToCart }) {
-  const { user, profile, orders, favorites, signOut, topup, updateProfile, toggleFavorite } = useAuth()
-  const [tab, setTab] = useState('profile')
-  const [name, setName] = useState(profile?.name ?? '')
-  const [emoji, setEmoji] = useState(profile?.emoji ?? '😎')
-  const [busy, setBusy] = useState(false)
-  const [savedFlag, setSavedFlag] = useState(false)
+/**
+ * Кошелёк без аккаунта: баланс, коины, локальная история заказов и избранное.
+ * Регистрации нет — всё живёт в браузере.
+ */
+export default function Account({
+  t, lang, wallet, orders, favorites,
+  onTopup, onToggleFav, onClose, onToast, onAddToCart,
+}) {
+  const [tab, setTab] = useState('wallet')
 
   const spent = orders.reduce((s, o) => s + o.total, 0)
-  const since = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'kk-KZ', { month: 'long', year: 'numeric' })
-    : '—'
-
-  const guard = async (fn) => {
-    if (busy) return
-    setBusy(true)
-    try { await fn() } catch (e) { onToast(t[e.message] || t.err_generic) } finally { setBusy(false) }
-  }
-
-  const save = () => guard(async () => {
-    await updateProfile({ name: name.trim() || null, emoji })
-    setSavedFlag(true)
-    setTimeout(() => setSavedFlag(false), 1600)
-  })
-
   const favProducts = PRODUCTS.filter((p) => favorites.includes(p.id))
+
+  const tabs = [
+    ['wallet', t.tab_wallet],
+    ['orders', `${t.tab_orders}${orders.length ? ` (${orders.length})` : ''}`],
+    ['fav', `${t.tab_fav}${favProducts.length ? ` (${favProducts.length})` : ''}`],
+  ]
 
   return (
     <motion.aside
@@ -42,11 +32,11 @@ export default function Account({ t, lang, onClose, onToast, onAddToCart }) {
     >
       <div className="drawer-head">
         <h3>{t.account}</h3>
-        <button className="x" onClick={onClose} aria-label="close">✕</button>
+        <button className="x" onClick={onClose} aria-label="close"><Icon name="close" size={15} /></button>
       </div>
 
       <div className="acc-tabs">
-        {[['profile', t.tab_profile], ['orders', `${t.tab_orders} ${orders.length ? `(${orders.length})` : ''}`], ['fav', `${t.tab_fav} ${favProducts.length ? `(${favProducts.length})` : ''}`]].map(([k, label]) => (
+        {tabs.map(([k, label]) => (
           <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
             {label}
             {tab === k && <motion.span layoutId="acc-underline" className="acc-underline" />}
@@ -55,27 +45,30 @@ export default function Account({ t, lang, onClose, onToast, onAddToCart }) {
       </div>
 
       <div className="drawer-list">
-        <AnimatePresence mode="wait">
-          {/* ── профиль ── */}
-          {tab === 'profile' && (
-            <motion.div key="profile" className="acc-pane"
+        {/* Без mode="wait": он монтирует новую вкладку только после того, как
+            доиграет выход старой — если анимация встанет, вкладка останется пустой. */}
+        <AnimatePresence>
+          {/* ── кошелёк ── */}
+          {tab === 'wallet' && (
+            <motion.div key="wallet" className="acc-pane"
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
               <div className="wcard">
                 <div className="wcard-top">
                   <Logo size={28} withWord={false} />
                   <span>{t.wallet}</span>
                 </div>
-                <div className="wcard-balance">{fmt(profile?.balance ?? 0)}</div>
+                <div className="wcard-balance">{fmt(wallet.balance)}</div>
                 <div className="wcard-bottom">
-                  <span>🪙 {profile?.coins ?? 0} {t.coins}</span>
-                  <span>{user?.email}</span>
+                  <span className="with-icon"><Icon name="coin" size={15} /> {wallet.coins} {t.coins}</span>
+                  <span>•••• 4242</span>
                 </div>
               </div>
 
+              <p className="muted center">{t.cashback}</p>
+
               <div className="topups">
                 {[5000, 15000, 50000].map((a) => (
-                  <button key={a} className="btn btn-ghost" disabled={busy}
-                    onClick={() => guard(async () => { await topup(a); onToast(`${t.topup_added}: +${fmt(a)}`) })}>
+                  <button key={a} className="btn btn-ghost" onClick={() => onTopup(a)}>
                     + {fmt(a)}
                   </button>
                 ))}
@@ -84,27 +77,8 @@ export default function Account({ t, lang, onClose, onToast, onAddToCart }) {
               <div className="acc-stats">
                 <div><b>{orders.length}</b><span>{t.orders_count}</span></div>
                 <div><b>{fmt(spent)}</b><span>{t.spent}</span></div>
-                <div><b>{since}</b><span>{t.member_since}</span></div>
+                <div><b className="with-icon"><Icon name="coin" size={14} /> {wallet.coins}</b><span>{t.coins}</span></div>
               </div>
-
-              <label className="acc-field">
-                <span>{t.name}</span>
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t.name_ph} />
-              </label>
-
-              <div className="acc-field">
-                <span>{t.pick_emoji}</span>
-                <div className="emoji-row">
-                  {EMOJI.map((e) => (
-                    <button key={e} className={`emoji ${emoji === e ? 'on' : ''}`} onClick={() => setEmoji(e)}>{e}</button>
-                  ))}
-                </div>
-              </div>
-
-              <button className="btn btn-solid full" onClick={save} disabled={busy}>
-                {savedFlag ? t.saved : t.save}
-              </button>
-              <button className="btn full" onClick={() => { signOut(); onClose() }}>{t.logout}</button>
             </motion.div>
           )}
 
@@ -116,7 +90,7 @@ export default function Account({ t, lang, onClose, onToast, onAddToCart }) {
               {orders.map((o) => (
                 <div key={o.id} className="order">
                   <div className="order-top">
-                    <b>{t.order_no} #{String(o.id).slice(0, 8)}</b>
+                    <b>{t.order_no} #{String(o.id).slice(-6)}</b>
                     <span>{new Date(o.created_at).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'kk-KZ')}</span>
                   </div>
                   <ul className="order-items">
@@ -126,7 +100,13 @@ export default function Account({ t, lang, onClose, onToast, onAddToCart }) {
                   </ul>
                   <div className="order-bot">
                     <span className="price">{fmt(o.total)}</span>
-                    <span className="coins-badge">🪙 +{o.coins_earned}</span>
+                    <span className="pay-tag">
+                      <Icon name={o.method === 'wallet' ? 'wallet' : 'card'} size={14} />
+                      {o.method === 'wallet' ? t.pay_wallet : t.pay_card}
+                    </span>
+                    {o.coins_earned > 0 && (
+                      <span className="coins-badge with-icon"><Icon name="coin" size={13} /> +{o.coins_earned}</span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -146,7 +126,7 @@ export default function Account({ t, lang, onClose, onToast, onAddToCart }) {
                   <div className="line-info">
                     <b>{p[lang].title}</b>
                     <span>{fmt(p.price)}</span>
-                    <button className="link" onClick={() => guard(() => toggleFavorite(p.id))}>✕ {t.remove}</button>
+                    <button className="link" onClick={() => onToggleFav(p.id)}>{t.remove}</button>
                   </div>
                   <button className="btn btn-add" onClick={() => { onAddToCart(p, 'M'); onToast(t.added) }}>
                     {t.add}
