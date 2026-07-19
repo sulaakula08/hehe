@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────
--- HEHE — схема базы. Выполнить целиком в Supabase → SQL Editor.
+-- ХЕХЕ — схема базы. Выполнить целиком в Supabase → SQL Editor.
 -- Скрипт идемпотентный: можно запускать повторно.
 -- ─────────────────────────────────────────────────────────────
 
@@ -8,8 +8,8 @@ create table if not exists public.profiles (
   id         uuid primary key references auth.users on delete cascade,
   name       text,
   emoji      text   not null default '😎',
-  balance    bigint not null default 25000,   -- тенге на HEHE Wallet
-  coins      bigint not null default 0,       -- HEHE-коины
+  balance    bigint not null default 25000,   -- тенге на ХЕХЕ Wallet
+  coins      bigint not null default 0,       -- ХЕХЕ-коины
   created_at timestamptz not null default now(),
   constraint balance_non_negative check (balance >= 0),
   constraint coins_non_negative   check (coins >= 0)

@@ -4,8 +4,9 @@ import Logo from './components/Logo.jsx'
 import Tshirt from './components/Tshirt.jsx'
 import AuthModal from './components/AuthModal.jsx'
 import Account from './components/Account.jsx'
+import Designer from './components/Designer.jsx'
 import { useAuth } from './auth.jsx'
-import { PRODUCTS, RARITY, SIZES, T, fmt } from './data.js'
+import { PRODUCTS, RARITY, SIZES, T, fmt, CUSTOM_PRICE } from './data.js'
 
 const load = (k, d) => {
   try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch { return d }
@@ -167,6 +168,7 @@ export default function App() {
   // и она открывается в том режиме, в котором её закрыли. Новый ключ = чистое состояние.
   const [authSeq, setAuthSeq] = useState(0)
   const [openAccount, setOpenAccount] = useState(false)
+  const [openDesigner, setOpenDesigner] = useState(false)
   const [toast, setToast] = useState(null)
   const [filter, setFilter] = useState('all')
   const [flashId, setFlashId] = useState(null)
@@ -174,7 +176,12 @@ export default function App() {
   const t = T[lang]
 
   useEffect(() => localStorage.setItem('hehe.lang', JSON.stringify(lang)), [lang])
-  useEffect(() => localStorage.setItem('hehe.cart', JSON.stringify(cart)), [cart])
+  // Дизайны из конструктора хранят картинку прямо в корзине, поэтому запись
+  // может упереться в квоту localStorage — корзина в памяти при этом остаётся целой.
+  useEffect(() => {
+    try { localStorage.setItem('hehe.cart', JSON.stringify(cart)) }
+    catch { /* переполнили квоту — просто не сохраняем между перезагрузками */ }
+  }, [cart])
   useEffect(() => { document.documentElement.lang = lang === 'ru' ? 'ru' : 'kk' }, [lang])
 
   const { scrollYProgress } = useScroll()
@@ -198,9 +205,30 @@ export default function App() {
     })
   }
 
+  // Дизайн из конструктора — отдельная позиция: он не лежит в PRODUCTS,
+  // поэтому носит свои данные прямо в строке корзины.
+  const addCustomToCart = (design, size) => {
+    const key = `custom-${Date.now()}`
+    setCart((c) => [...c, { key, id: 'custom', size, qty: 1, custom: design }])
+  }
+
+  /** Приводит строку корзины к единому виду: что рисовать, как назвать, почём. */
+  const resolveItem = (i) => {
+    if (i.custom) {
+      const label = i.custom.text ? `${t.designer}: «${i.custom.text.split('\n')[0]}»` : t.designer
+      return {
+        price: CUSTOM_PRICE,
+        title: label,
+        product: { id: i.key, color: i.custom.fabric, ink: i.custom.ink, custom: i.custom, ru: {}, kk: {} },
+      }
+    }
+    const p = PRODUCTS.find((x) => x.id === i.id)
+    return { price: p.price, title: p[lang].title, product: p }
+  }
+
   const removeFromCart = (key) => setCart((c) => c.filter((i) => i.key !== key))
 
-  const total = cart.reduce((s, i) => s + PRODUCTS.find((p) => p.id === i.id).price * i.qty, 0)
+  const total = cart.reduce((s, i) => s + resolveItem(i).price * i.qty, 0)
   const count = cart.reduce((s, i) => s + i.qty, 0)
 
   const openAuthModal = (mode = 'in') => {
@@ -216,9 +244,10 @@ export default function App() {
 
     setPaying(true)
     try {
+      // Картинку дизайна в заказ не кладём — она раздула бы строку в базе.
       const items = cart.map((i) => {
-        const p = PRODUCTS.find((x) => x.id === i.id)
-        return { id: p.id, size: i.size, qty: i.qty, price: p.price, title: p[lang].title }
+        const { price, title } = resolveItem(i)
+        return { id: i.id, size: i.size, qty: i.qty, price, title }
       })
       const order = await auth.checkout(items)
       setCart([])
@@ -267,7 +296,11 @@ export default function App() {
     return () => window.removeEventListener('pointermove', onMove)
   }, [])
 
-  const closeOverlays = () => { setOpenCart(false); setOpenAuth(null); setOpenAccount(false) }
+  const anyOverlay = openCart || Boolean(openAuth) || openAccount || openDesigner
+
+  const closeOverlays = () => {
+    setOpenCart(false); setOpenAuth(null); setOpenAccount(false); setOpenDesigner(false)
+  }
 
   return (
     <>
@@ -342,6 +375,7 @@ export default function App() {
 
           <motion.div className="hero-cta" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
             <a href="#catalog" className="btn btn-solid big">{t.cta_shop}</a>
+            <button className="btn btn-hot big" onClick={() => setOpenDesigner(true)}>{t.designer_open}</button>
             <button className="btn btn-ghost big" onClick={random}>{t.cta_random}</button>
           </motion.div>
 
@@ -364,14 +398,19 @@ export default function App() {
         </motion.div>
       </section>
 
-      <Ticker text="HEHE" />
+      <Ticker text="ХЕХЕ" />
       <Countdown t={t} />
 
       {/* ── каталог ── */}
       <section id="catalog" className="section">
-        <div className="section-head">
-          <h2>{t.catalog_title}</h2>
-          <p>{t.catalog_sub}</p>
+        <div className="section-head catalog-head">
+          <div>
+            <h2>{t.catalog_title}</h2>
+            <p>{t.catalog_sub}</p>
+          </div>
+          <button className="btn btn-hot big" onClick={() => setOpenDesigner(true)}>
+            {t.designer_open}
+          </button>
         </div>
 
         <div className="filters">
@@ -425,14 +464,19 @@ export default function App() {
       <footer className="footer">
         <Logo size={34} />
         <p>{t.footer}</p>
-        <span>© {new Date().getFullYear()} HEHE</span>
+        <span>© {new Date().getFullYear()} ХЕХЕ</span>
       </footer>
 
       {/* ── оверлеи ── */}
       {/* Каждый оверлей — в своём AnimatePresence: с одним общим и меняющимися
-          ключами framer оставляет выходящие узлы висеть в DOM. */}
+          ключами framer оставляет выходящие узлы висеть в DOM.
+
+          Обёртка гасит клики, когда не открыто ничего: если анимация закрытия
+          не доиграет (например, вкладка ушла в фон и rAF встал), невидимый
+          оверлей всё равно не перехватит клики по странице. */}
+      <div className="overlay-root" style={{ pointerEvents: anyOverlay ? 'auto' : 'none' }}>
       <AnimatePresence>
-        {(openCart || openAuth || openAccount) && (
+        {anyOverlay && (
           <motion.div key="scrim" className="scrim"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={closeOverlays} />
@@ -455,19 +499,19 @@ export default function App() {
 
             <div className="drawer-list">
               {cart.map((i) => {
-                const p = PRODUCTS.find((x) => x.id === i.id)
+                const { product, title, price } = resolveItem(i)
                 return (
                   <motion.div key={i.key} layout className="line"
                     initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 30 }}>
-                    <div className="line-thumb" style={{ background: p.color }}>
-                      <Tshirt product={p} lang={lang} />
+                    <div className="line-thumb" style={{ background: product.color }}>
+                      <Tshirt product={product} lang={lang} />
                     </div>
                     <div className="line-info">
-                      <b>{p[lang].title}</b>
+                      <b>{title}</b>
                       <span>{i.size} · ×{i.qty}</span>
                       <button className="link" onClick={() => removeFromCart(i.key)}>{t.remove}</button>
                     </div>
-                    <span className="line-price">{fmt(p.price * i.qty)}</span>
+                    <span className="line-price">{fmt(price * i.qty)}</span>
                   </motion.div>
                 )
               })}
@@ -497,6 +541,17 @@ export default function App() {
       </AnimatePresence>
 
       <AnimatePresence>
+        {openDesigner && (
+          <Designer
+            key="designer" t={t} lang={lang}
+            onClose={() => setOpenDesigner(false)}
+            onAdd={addCustomToCart}
+            onToast={say}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {openAccount && user && (
           <Account
             key="account" t={t} lang={lang}
@@ -504,6 +559,7 @@ export default function App() {
           />
         )}
       </AnimatePresence>
+      </div>
 
       {/* ── тост ── */}
       <AnimatePresence>

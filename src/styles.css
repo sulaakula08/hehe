@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────
-   HEHE — нео-брутализм: жирные рамки, жёсткие тени,
+   ХЕХЕ — нео-брутализм: жирные рамки, жёсткие тени,
    кислотный жёлтый и розовый на бумажном фоне.
    ────────────────────────────────────────────── */
 
@@ -139,10 +139,14 @@ a { color: inherit; text-decoration: none; }
 .stats span { font-size: 13px; opacity: .65; max-width: 120px; }
 
 .hero-tee { position: relative; z-index: 1; display: grid; place-items: center; }
-.hero-tee .tee { width: min(100%, 430px); filter: drop-shadow(14px 14px 0 rgba(18,16,14,.9)); }
+/* Реалистичной ткани идёт мягкая тень, а не брутальная плашка. */
+.hero-tee .tee { width: min(100%, 430px); filter: drop-shadow(0 18px 26px rgba(18, 16, 14, .28)); }
 
 /* ── футболка ── */
 .tee { width: 100%; height: auto; display: block; }
+/* Фото-товар: держим ту же пропорцию, что у рисованных, чтобы карточки не прыгали. */
+.tee-photo { aspect-ratio: 300 / 340; object-fit: contain; }
+.line-thumb .tee-photo { aspect-ratio: 1; }
 .tee-print {
   font-family: 'Unbounded', sans-serif; font-weight: 800;
   letter-spacing: -.01em; user-select: none;
@@ -247,6 +251,9 @@ a { color: inherit; text-decoration: none; }
 .footer span { margin-left: auto; opacity: .5; font-size: 14px; }
 
 /* ── оверлеи ── */
+/* Контейнер без габаритов: нужен только чтобы одним переключателем
+   гасить клики по недоигравшим анимациям закрытия. */
+.overlay-root { position: static; }
 .scrim { position: fixed; inset: 0; background: rgba(18, 16, 14, .55); z-index: 60; backdrop-filter: blur(3px); }
 
 .drawer {
@@ -404,7 +411,57 @@ a { color: inherit; text-decoration: none; }
 .order-bot .price { font-size: 17px; }
 .coins-badge { background: var(--acid); border: 2px solid var(--ink); border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; }
 
+/* ── конструктор ── */
+.btn-hot { background: var(--hot); color: #fff; }
+
+.catalog-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+.designer { width: min(900px, calc(100% - 24px)); max-height: 90vh; overflow-y: auto; gap: 18px; }
+.d-head h3 { font-size: clamp(24px, 4vw, 34px); }
+.d-body { display: grid; grid-template-columns: 1fr 1.05fr; gap: 22px; align-items: start; }
+
+.d-preview {
+  border: var(--line); border-radius: var(--r); padding: 10px;
+  position: sticky; top: 0;
+}
+.d-preview .tee { width: 100%; }
+
+.d-controls { display: flex; flex-direction: column; gap: 14px; }
+.d-field { display: flex; flex-direction: column; gap: 7px; }
+.d-field > span { font-size: 12px; font-weight: 700; opacity: .65; letter-spacing: .04em; }
+.d-field textarea {
+  border: var(--line); border-radius: 12px; padding: 11px 13px;
+  font-family: inherit; font-size: 15px; resize: vertical; background: #fff;
+  min-height: 76px; width: 100%;
+}
+.d-field textarea:focus { outline: 3px solid var(--acid); outline-offset: 1px; }
+.d-field input[type=range] { accent-color: var(--hot); width: 100%; }
+.d-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatch {
+  width: 38px; height: 38px; border: var(--line); border-radius: 10px;
+  cursor: pointer; padding: 0; transition: transform .12s;
+}
+.swatch.small { width: 30px; height: 30px; border-radius: 8px; }
+.swatch:hover { transform: scale(1.08); }
+.swatch.on { box-shadow: 0 0 0 3px var(--acid), 3px 3px 0 var(--ink); }
+
+.d-check { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.d-check input { width: 18px; height: 18px; accent-color: var(--hot); }
+
+.d-foot {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  border-top: var(--line); padding-top: 14px; margin-top: 4px;
+}
+.d-foot .price { margin-left: auto; }
+
 /* ── адаптив ── */
+@media (max-width: 760px) {
+  .d-body { grid-template-columns: 1fr; }
+  .d-preview { position: static; max-width: 300px; margin: 0 auto; }
+}
+
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; }
   .hero-tee { order: -1; max-width: 320px; margin: 0 auto; }

@@ -7,7 +7,41 @@ export const RARITY = {
 }
 
 // art — параметры для генеративного принта (рисуем SVG, а не грузим картинки)
+// photo — если указан, вместо рисованной футболки показывается фотография из /public
 export const PRODUCTS = [
+  {
+    id: 'your-design',
+    price: 15900,
+    rarity: 'legendary',
+    lol: 100,
+    color: '#e9e9e7',
+    ink: '#111',
+    photo: '/tee-photo.jpg',
+    ru: { title: 'Твой дизайн', print: '', sub: 'Присылаешь свой мем — печатаем его' },
+    kk: { title: 'Сенің дизайның', print: '', sub: 'Өз мемінді жібер — біз басып береміз' },
+  },
+  {
+    id: 'nugget',
+    price: 13900,
+    rarity: 'legendary',
+    lol: 98,
+    color: '#141414',
+    ink: '#f5f0e8',
+    photo: '/tee-nugget.jpg',
+    ru: { title: 'Наггетс-мужик', print: '', sub: 'Он всё видел. Он ничего не скажет.' },
+    kk: { title: 'Наггетс-ағай', print: '', sub: 'Ол бәрін көрген. Ештеңе айтпайды.' },
+  },
+  {
+    id: 'nice-try',
+    price: 14900,
+    rarity: 'rare',
+    lol: 88,
+    color: '#0d0d0d',
+    ink: '#f5f0e8',
+    photo: '/tee-diddy.jpg',
+    ru: { title: 'Nice Try', print: '', sub: 'Классика чёрного цвета' },
+    kk: { title: 'Nice Try', print: '', sub: 'Қара түсті классика' },
+  },
   {
     id: 'noutbuk',
     price: 11900,
@@ -122,6 +156,21 @@ export const PRODUCTS = [
 
 export const SIZES = ['S', 'M', 'L', 'XL', 'XXL']
 
+/* ── Конструктор ── */
+export const CUSTOM_PRICE = 15900
+
+// Цвета ткани, доступные в конструкторе: [заливка, цвет текста по умолчанию]
+export const CUSTOM_COLORS = [
+  { id: 'white', fabric: '#f0efec', ink: '#111111' },
+  { id: 'black', fabric: '#141414', ink: '#f5f0e8' },
+  { id: 'acid', fabric: '#ffe600', ink: '#141414' },
+  { id: 'pink', fabric: '#ff2e88', ink: '#ffffff' },
+  { id: 'green', fabric: '#2d6a4f', ink: '#f5f0e8' },
+  { id: 'blue', fabric: '#0a1f3d', ink: '#f5f0e8' },
+]
+
+export const INK_COLORS = ['#141414', '#f5f0e8', '#ffe600', '#ff2e88', '#00e5a0', '#e63946', '#4f8cff']
+
 export const T = {
   ru: {
     lang: 'RU',
@@ -149,9 +198,9 @@ export const T = {
     cart_empty: 'Пусто. Совсем. Как мой календарь.',
     total: 'Итого',
     checkout: 'Оплатить кошельком',
-    wallet: 'HEHE Wallet',
+    wallet: 'ХЕХЕ Wallet',
     balance: 'Баланс',
-    coins: 'HEHE-коины',
+    coins: 'ХЕХЕ-коины',
     topup: 'Пополнить',
     cashback: 'Кэшбэк 7% коинами с каждой покупки',
     pay_ok: 'Оплачено! Смех отгружен 📦',
@@ -160,7 +209,7 @@ export const T = {
     how_1_t: 'Выбираешь мем',
     how_1_d: 'Смотришь на ЛОЛ-метр. Ниже 70 мы вообще не печатаем.',
     how_2_t: 'Платишь кошельком',
-    how_2_d: 'Пополняешь HEHE Wallet, получаешь 7% коинами обратно.',
+    how_2_d: 'Пополняешь ХЕХЕ Wallet, получаешь 7% коинами обратно.',
     how_3_t: 'Носишь',
     how_3_d: 'Незнакомцы начинают разговор. Это побочный эффект, мы предупредили.',
     drop_title: 'ДРОП НЕДЕЛИ ЗАКАНЧИВАЕТСЯ ЧЕРЕЗ',
@@ -187,7 +236,7 @@ export const T = {
     auth_title_in: 'С возвращением',
     auth_title_up: 'Заводим аккаунт',
     auth_sub_in: 'Кошелёк, заказы и избранное ждут',
-    auth_sub_up: 'Дарим 25 000 ₸ на HEHE Wallet за регистрацию',
+    auth_sub_up: 'Дарим 25 000 ₸ на ХЕХЕ Wallet за регистрацию',
     confirm_sent: 'Проверь почту — там ссылка для подтверждения 📬',
     welcome: 'Салем',
     login_to_buy: 'Войди, чтобы оплатить',
@@ -206,6 +255,28 @@ export const T = {
     saved: 'Сохранено ✓',
     to_fav: 'В избранное',
     processing: 'Секунду…',
+
+    /* конструктор */
+    designer: 'Свой дизайн',
+    designer_open: 'Собрать свою 🎨',
+    designer_title: 'КОНСТРУКТОР',
+    designer_sub: 'Пиши что хочешь, кидай своё фото — напечатаем',
+    d_fabric: 'Цвет футболки',
+    d_text: 'Текст на футболке',
+    d_text_ph: 'НАПИШИ\nЧТО-НИБУДЬ',
+    d_text_hint: 'Enter — новая строка',
+    d_ink: 'Цвет текста',
+    d_size: 'Размер текста',
+    d_photo: 'Своё фото',
+    d_photo_add: 'Загрузить картинку',
+    d_photo_del: 'Убрать картинку',
+    d_photo_size: 'Размер картинки',
+    d_photo_first: 'Картинка сверху',
+    d_reset: 'Сбросить',
+    d_empty: 'Добавь текст или картинку',
+    d_too_big: 'Файл больше 8 МБ — возьми поменьше',
+    d_bad_file: 'Это не картинка',
+    d_added: 'Твой дизайн в корзине 🎨',
     /* ошибки */
     err_auth_required: 'Сначала войди в аккаунт',
     err_bad_creds: 'Неверная почта или пароль',
@@ -244,9 +315,9 @@ export const T = {
     cart_empty: 'Бос. Мүлдем. Күнтізбем сияқты.',
     total: 'Жиыны',
     checkout: 'Әмиянмен төлеу',
-    wallet: 'HEHE Wallet',
+    wallet: 'ХЕХЕ Wallet',
     balance: 'Баланс',
-    coins: 'HEHE-коин',
+    coins: 'ХЕХЕ-коин',
     topup: 'Толтыру',
     cashback: 'Әр сатып алудан 7% коин кэшбэк',
     pay_ok: 'Төленді! Күлкі жөнелтілді 📦',
@@ -255,7 +326,7 @@ export const T = {
     how_1_t: 'Мем таңдайсың',
     how_1_d: 'КҮЛКІ-метрге қара. 70-тен төмен принтті біз баспаймыз.',
     how_2_t: 'Әмиянмен төлейсің',
-    how_2_d: 'HEHE Wallet-ті толтырасың, 7% коин қайтарасың.',
+    how_2_d: 'ХЕХЕ Wallet-ті толтырасың, 7% коин қайтарасың.',
     how_3_t: 'Киесің',
     how_3_d: 'Бейтаныс адамдар сөз бастайды. Бұл жанама әсер, ескерттік.',
     drop_title: 'АПТА ДРОБЫ АЯҚТАЛАДЫ',
@@ -282,7 +353,7 @@ export const T = {
     auth_title_in: 'Қайта қош келдің',
     auth_title_up: 'Аккаунт ашамыз',
     auth_sub_in: 'Әмиян, тапсырыстар мен таңдаулылар күтіп тұр',
-    auth_sub_up: 'Тіркелгенге HEHE Wallet-ке 25 000 ₸ сыйға',
+    auth_sub_up: 'Тіркелгенге ХЕХЕ Wallet-ке 25 000 ₸ сыйға',
     confirm_sent: 'Поштаңды тексер — растау сілтемесі жіберілді 📬',
     welcome: 'Сәлем',
     login_to_buy: 'Төлеу үшін кір',
@@ -301,6 +372,28 @@ export const T = {
     saved: 'Сақталды ✓',
     to_fav: 'Таңдаулыға',
     processing: 'Бір сәт…',
+
+    /* конструктор */
+    designer: 'Өз дизайным',
+    designer_open: 'Өзің жаса 🎨',
+    designer_title: 'КОНСТРУКТОР',
+    designer_sub: 'Не қаласаң жаз, өз суретіңді жібер — басып береміз',
+    d_fabric: 'Футболка түсі',
+    d_text: 'Футболкадағы мәтін',
+    d_text_ph: 'БІРДЕҢЕ\nЖАЗ',
+    d_text_hint: 'Enter — жаңа жол',
+    d_ink: 'Мәтін түсі',
+    d_size: 'Мәтін өлшемі',
+    d_photo: 'Өз суретің',
+    d_photo_add: 'Сурет жүктеу',
+    d_photo_del: 'Суретті алып тастау',
+    d_photo_size: 'Сурет өлшемі',
+    d_photo_first: 'Сурет жоғарыда',
+    d_reset: 'Тазалау',
+    d_empty: 'Мәтін не сурет қос',
+    d_too_big: 'Файл 8 МБ-тан үлкен — кішірегін ал',
+    d_bad_file: 'Бұл сурет емес',
+    d_added: 'Дизайның себетте 🎨',
     /* ошибки */
     err_auth_required: 'Алдымен аккаунтқа кір',
     err_bad_creds: 'Пошта не құпиясөз қате',

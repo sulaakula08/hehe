@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 
 /**
- * Логотип HEHE: квадратный «жмурящийся» смайл.
+ * Логотип ХЕХЕ: квадратный «жмурящийся» смайл.
  * Глаза — перевёрнутые буквы E (лежат на боку = ^ ^ прищур),
  * рот — открытая скобка. При наведении смайл «ржёт»: глаза сжимаются, рот растёт.
  */
@@ -49,7 +49,7 @@ export default function Logo({ size = 44, withWord = true }) {
       </motion.svg>
       {withWord && (
         <div className="logo-word">
-          HEHE<span className="logo-dot">.</span>
+          ХЕХЕ<span className="logo-dot">.</span>
         </div>
       )}
     </motion.div>
