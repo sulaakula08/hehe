@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 
 /**
- * Знак ХЕХЕ.
+ * Знак funymems.cc.
  *
  * Идея: кириллическая «Х» из самого названия — это готовые зажмуренные глаза,
  * как в «XD». Два таких креста плюс широкая улыбка читаются как смеющееся лицо
@@ -50,7 +50,7 @@ export default function Logo({ size = 44, withWord = true }) {
         />
       </motion.svg>
 
-      {withWord && <span className="logo-word">ХЕХЕ<i className="logo-dot" /></span>}
+      {withWord && <span className="logo-word">funymems<span className="logo-cc">.cc</span></span>}
     </motion.div>
   )
 }

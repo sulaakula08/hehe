@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────
-   ХЕХЕ — нео-брутализм: жирные рамки, жёсткие тени,
+   funymems.cc — нео-брутализм: жирные рамки, жёсткие тени,
    кислотный жёлтый и розовый на бумажном фоне.
    ────────────────────────────────────────────── */
 
@@ -118,8 +118,8 @@ a { color: inherit; text-decoration: none; }
   backdrop-filter: blur(12px);
   border-bottom: var(--line);
 }
-.logo-word { font-size: 26px; font-weight: 900; letter-spacing: -.04em; }
-.logo-dot { color: var(--hot); }
+.logo-word { font-size: 24px; font-weight: 900; letter-spacing: -.04em; }
+.logo-cc { color: var(--hot); }
 .nav-links { display: flex; gap: 22px; margin-left: 18px; font-weight: 500; }
 .nav-links a { position: relative; }
 .nav-links a::after {

@@ -386,7 +386,7 @@ export default function App() {
         </motion.div>
       </section>
 
-      <Ticker text="ХЕХЕ" />
+      <Ticker text="funymems.cc" />
       <Countdown t={t} />
 
       {/* ── каталог ── */}
@@ -452,7 +452,7 @@ export default function App() {
       <footer className="footer">
         <Logo size={34} />
         <p>{t.footer}</p>
-        <span>© {new Date().getFullYear()} ХЕХЕ</span>
+        <span>© {new Date().getFullYear()} funymems.cc</span>
       </footer>
 
       {/* Обёртка гасит клики, когда не открыто ничего: если анимация закрытия
