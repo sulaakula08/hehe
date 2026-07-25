@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Tshirt from './Tshirt.jsx'
 import Logo from './Logo.jsx'
 import Icon from './Icon.jsx'
-import { PRODUCTS, fmt } from '../data.js'
+import { PRODUCTS, fmt, priceFor } from '../data.js'
 
 /**
  * Кошелёк без аккаунта: баланс, коины, локальная история заказов и избранное.
@@ -121,11 +121,11 @@ export default function Account({
               {favProducts.map((p) => (
                 <div key={p.id} className="line">
                   <div className="line-thumb" style={{ background: p.color }}>
-                    <Tshirt product={p} lang={lang} />
+                    <Tshirt product={{ ...p, photo: p.photos?.black }} lang={lang} />
                   </div>
                   <div className="line-info">
                     <b>{p[lang].title}</b>
-                    <span>{fmt(p.price)}</span>
+                    <span>{fmt(priceFor(p, 'M'))}</span>
                     <button className="link" onClick={() => onToggleFav(p.id)}>{t.remove}</button>
                   </div>
                   <button className="btn btn-add" onClick={() => { onAddToCart(p, 'M'); onToast(t.added) }}>

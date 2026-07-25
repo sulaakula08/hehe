@@ -271,44 +271,54 @@ export default function Tshirt({
       style={editable ? { touchAction: 'none' } : undefined}
     >
       <defs>
-        {/* Цилиндрический объём корпуса: края в тень, центр в свет. */}
+        {/* Цилиндрический объём корпуса: края в тень, центр в свет.
+            Больше остановок — мягче переход, ткань перестаёт быть плоской. */}
         <linearGradient id={`${uid}-body`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#000" stopOpacity="0.30" />
-          <stop offset="14%" stopColor="#000" stopOpacity="0.10" />
-          <stop offset="38%" stopColor="#fff" stopOpacity="0.14" />
-          <stop offset="60%" stopColor="#fff" stopOpacity="0.06" />
-          <stop offset="84%" stopColor="#000" stopOpacity="0.12" />
-          <stop offset="100%" stopColor="#000" stopOpacity="0.32" />
+          <stop offset="0%"   stopColor="#000" stopOpacity="0.34" />
+          <stop offset="8%"   stopColor="#000" stopOpacity="0.20" />
+          <stop offset="20%"  stopColor="#000" stopOpacity="0.06" />
+          <stop offset="34%"  stopColor="#fff" stopOpacity="0.13" />
+          <stop offset="46%"  stopColor="#fff" stopOpacity="0.17" />
+          <stop offset="62%"  stopColor="#fff" stopOpacity="0.07" />
+          <stop offset="78%"  stopColor="#000" stopOpacity="0.09" />
+          <stop offset="92%"  stopColor="#000" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.36" />
         </linearGradient>
 
-        {/* Свет сверху, подол в тени. */}
+        {/* Свет сверху на груди, подол и низ в тени. */}
         <linearGradient id={`${uid}-vert`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#fff" stopOpacity="0.16" />
-          <stop offset="45%" stopColor="#fff" stopOpacity="0" />
-          <stop offset="100%" stopColor="#000" stopOpacity="0.20" />
+          <stop offset="0%"   stopColor="#fff" stopOpacity="0.18" />
+          <stop offset="26%"  stopColor="#fff" stopOpacity="0.07" />
+          <stop offset="52%"  stopColor="#000" stopOpacity="0" />
+          <stop offset="82%"  stopColor="#000" stopOpacity="0.13" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.26" />
         </linearGradient>
 
-        <filter id={`${uid}-soft`} x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="7" />
+        <filter id={`${uid}-soft`} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="8" />
         </filter>
-        <filter id={`${uid}-fold`} x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="2.4" />
+        <filter id={`${uid}-fold`} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="2.6" />
         </filter>
-        <filter id={`${uid}-drop`} x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="9" />
+        <filter id={`${uid}-fold-soft`} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
+        <filter id={`${uid}-drop`} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="10" />
         </filter>
 
-        {/* Тканевая крошка — только на крупной футболке, чтобы не грузить сетку. */}
-        {big && (
-          <filter id={`${uid}-cloth`}>
-            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" result="n" />
-            <feColorMatrix in="n" type="saturate" values="0" result="g" />
-            <feComponentTransfer in="g" result="a">
-              <feFuncA type="linear" slope="0.055" intercept="0" />
-            </feComponentTransfer>
-            <feComposite in="a" in2="SourceGraphic" operator="in" />
-          </filter>
-        )}
+        {/* Зерно трикотажа. Обесцвеченный шум, накладывается умножением:
+            светлые точки почти не меняют цвет, тёмные крупинки чуть затемняют. */}
+        <filter id={`${uid}-grain`} x="0%" y="0%" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="7" result="n" />
+          <feColorMatrix in="n" type="saturate" values="0" result="g" />
+          <feComponentTransfer in="g">
+            <feFuncR type="linear" slope="0.30" intercept="0.72" />
+            <feFuncG type="linear" slope="0.30" intercept="0.72" />
+            <feFuncB type="linear" slope="0.30" intercept="0.72" />
+            <feFuncA type="linear" slope="0" intercept="1" />
+          </feComponentTransfer>
+        </filter>
 
         {/* Всё, что рисуем поверх, обрезаем по силуэту. */}
         <clipPath id={`${uid}-clip`}>
@@ -319,36 +329,10 @@ export default function Tshirt({
       {/* Тень на поверхности под футболкой */}
       <ellipse cx="150" cy="303" rx="96" ry="13" fill="#000" opacity="0.16" filter={`url(#${uid}-drop)`} />
 
-      {/* Ткань */}
+      {/* Ткань. Свет и складки идут ПОСЛЕ принта (ниже), чтобы тень от складки
+          ложилась и на ткань, и на печать — из-за обратного порядка принт
+          раньше выглядел наклейкой. */}
       <path d={BODY} fill={fabric} />
-
-      <g clipPath={`url(#${uid}-clip)`}>
-        <rect x="0" y="0" width="300" height="340" fill={`url(#${uid}-body)`} />
-        <rect x="0" y="0" width="300" height="340" fill={`url(#${uid}-vert)`} />
-
-        {/* Тени в проймах — от них силуэт перестаёт быть плоским */}
-        <ellipse cx="92" cy="150" rx="26" ry="34" fill="#000" opacity="0.20" filter={`url(#${uid}-soft)`} />
-        <ellipse cx="208" cy="150" rx="26" ry="34" fill="#000" opacity="0.20" filter={`url(#${uid}-soft)`} />
-        {/* Тень под воротом */}
-        <ellipse cx="150" cy="86" rx="42" ry="14" fill="#000" opacity="0.18" filter={`url(#${uid}-soft)`} />
-        {/* Тень на рукавах у корпуса */}
-        <ellipse cx="60" cy="140" rx="16" ry="30" fill="#000" opacity="0.12" filter={`url(#${uid}-soft)`} />
-        <ellipse cx="240" cy="140" rx="16" ry="30" fill="#000" opacity="0.12" filter={`url(#${uid}-soft)`} />
-
-        {/* Складки ткани */}
-        <g filter={`url(#${uid}-fold)`} fill="none" strokeLinecap="round">
-          <path d="M104 196 C100 232 100 264 104 292" stroke="#000" strokeOpacity="0.13" strokeWidth="7" />
-          <path d="M196 196 C200 232 200 264 196 292" stroke="#000" strokeOpacity="0.13" strokeWidth="7" />
-          <path d="M132 214 C130 246 131 270 134 292" stroke="#000" strokeOpacity="0.07" strokeWidth="5" />
-          <path d="M170 220 C173 250 172 272 169 292" stroke="#000" strokeOpacity="0.07" strokeWidth="5" />
-          <path d="M118 200 C116 234 117 262 120 290" stroke="#fff" strokeOpacity="0.10" strokeWidth="4" />
-          <path d="M182 204 C185 236 184 262 181 290" stroke="#fff" strokeOpacity="0.10" strokeWidth="4" />
-          {/* заломы на рукавах */}
-          <path d="M52 120 L74 146" stroke="#000" strokeOpacity="0.10" strokeWidth="5" />
-          <path d="M248 120 L226 146" stroke="#000" strokeOpacity="0.10" strokeWidth="5" />
-        </g>
-
-      </g>
 
       {/* Рубчатый ворот */}
       <path d={back ? COLLAR_OUT_BACK : COLLAR_OUT} fill="none" stroke="#000" strokeOpacity="0.28" strokeWidth="9" strokeLinecap="round" />
@@ -487,6 +471,64 @@ export default function Tshirt({
             )}
           </motion.g>
         </g>
+      </g>
+
+      {/* Свет, складки, швы и зерно — поверх принта. В редакторе притушены,
+          чтобы дизайн было хорошо видно; overlay не ловит клики. */}
+      <g clipPath={`url(#${uid}-clip)`} style={{ pointerEvents: 'none' }} opacity={editable ? 0.55 : 1}>
+        <rect x="0" y="0" width="300" height="340" fill={`url(#${uid}-body)`} />
+        <rect x="0" y="0" width="300" height="340" fill={`url(#${uid}-vert)`} />
+
+        {/* Затемнение в проймах и под воротом — от них силуэт объёмный */}
+        <ellipse cx="90" cy="146" rx="27" ry="36" fill="#000" opacity="0.22" filter={`url(#${uid}-soft)`} />
+        <ellipse cx="210" cy="146" rx="27" ry="36" fill="#000" opacity="0.22" filter={`url(#${uid}-soft)`} />
+        <ellipse cx="150" cy="84" rx="44" ry="15" fill="#000" opacity="0.20" filter={`url(#${uid}-soft)`} />
+        <ellipse cx="58" cy="138" rx="17" ry="32" fill="#000" opacity="0.14" filter={`url(#${uid}-soft)`} />
+        <ellipse cx="242" cy="138" rx="17" ry="32" fill="#000" opacity="0.14" filter={`url(#${uid}-soft)`} />
+        {/* Блик на груди */}
+        <ellipse cx="150" cy="150" rx="52" ry="44" fill="#fff" opacity="0.07" filter={`url(#${uid}-soft)`} />
+
+        {/* Крупные мягкие тени от того, как ткань висит */}
+        <g filter={`url(#${uid}-fold-soft)`} fill="none" strokeLinecap="round">
+          <path d="M96 190 C90 226 90 262 95 296" stroke="#000" strokeOpacity="0.10" strokeWidth="14" />
+          <path d="M204 190 C210 226 210 262 205 296" stroke="#000" strokeOpacity="0.10" strokeWidth="14" />
+        </g>
+
+        {/* Складки: разной толщины, с бликом по краю, иначе читаются как полоски */}
+        <g filter={`url(#${uid}-fold)`} fill="none" strokeLinecap="round">
+          <path d="M106 198 C101 232 101 264 105 293" stroke="#000" strokeOpacity="0.13" strokeWidth="7" />
+          <path d="M110 200 C105 234 105 264 109 292" stroke="#fff" strokeOpacity="0.08" strokeWidth="2.5" />
+          <path d="M194 198 C199 232 199 264 195 293" stroke="#000" strokeOpacity="0.13" strokeWidth="7" />
+          <path d="M190 200 C195 234 195 264 191 292" stroke="#fff" strokeOpacity="0.08" strokeWidth="2.5" />
+          <path d="M131 216 C129 246 130 270 133 292" stroke="#000" strokeOpacity="0.07" strokeWidth="5" />
+          <path d="M171 222 C174 250 173 272 170 292" stroke="#000" strokeOpacity="0.07" strokeWidth="5" />
+          <path d="M148 236 C147 258 148 276 149 292" stroke="#000" strokeOpacity="0.05" strokeWidth="4" />
+          {/* заломы у пройм и на рукавах */}
+          <path d="M96 176 C108 186 116 198 118 210" stroke="#000" strokeOpacity="0.08" strokeWidth="5" />
+          <path d="M204 176 C192 186 184 198 182 210" stroke="#000" strokeOpacity="0.08" strokeWidth="5" />
+          <path d="M50 118 L72 145" stroke="#000" strokeOpacity="0.11" strokeWidth="5" />
+          <path d="M250 118 L228 145" stroke="#000" strokeOpacity="0.11" strokeWidth="5" />
+          <path d="M56 132 L74 152" stroke="#fff" strokeOpacity="0.07" strokeWidth="3" />
+          <path d="M244 132 L226 152" stroke="#fff" strokeOpacity="0.07" strokeWidth="3" />
+        </g>
+
+        {/* Швы: плечевой, окат рукава и боковой */}
+        <g fill="none" stroke="#000" strokeLinecap="round">
+          <path d="M120 60 C104 64 88 70 74 79" strokeOpacity="0.16" strokeWidth="1.4" />
+          <path d="M180 60 C196 64 212 70 226 79" strokeOpacity="0.16" strokeWidth="1.4" />
+          <path d="M88 168 C92 150 92 122 84 100" strokeOpacity="0.13" strokeWidth="1.4" />
+          <path d="M212 168 C208 150 208 122 216 100" strokeOpacity="0.13" strokeWidth="1.4" />
+          <path d="M84 200 C80 240 79 270 80 294" strokeOpacity="0.10" strokeWidth="1.4" />
+          <path d="M216 200 C220 240 221 270 220 294" strokeOpacity="0.10" strokeWidth="1.4" />
+        </g>
+
+        {/* Зерно трикотажа поверх всего */}
+        <rect
+          x="0" y="0" width="300" height="340"
+          filter={`url(#${uid}-grain)`}
+          style={{ mixBlendMode: 'multiply' }}
+          opacity={big ? 0.5 : 0.34}
+        />
       </g>
     </motion.svg>
   )

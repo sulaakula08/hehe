@@ -5,7 +5,7 @@ import Tshirt from './components/Tshirt.jsx'
 import Account from './components/Account.jsx'
 import Designer from './components/Designer.jsx'
 import Icon from './components/Icon.jsx'
-import { PRODUCTS, RARITY, SIZES, T, fmt, CUSTOM_PRICE } from './data.js'
+import { PRODUCTS, MARKETS, SIZES, T, fmt, priceFor, CUSTOM_PRICE } from './data.js'
 
 const load = (k, d) => {
   try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch { return d }
@@ -37,11 +37,13 @@ function Ticker({ text }) {
 function Card({ p, lang, t, onAdd, isFav, onFav }) {
   const [hover, setHover] = useState(false)
   const [size, setSize] = useState('M')
+  const [color, setColor] = useState('black')
   const [justAdded, setJustAdded] = useState(false)
-  const r = RARITY[p.rarity]
+  const m = MARKETS[p.market]
+  const shown = { ...p, photo: p.photos[color] }
 
   const add = () => {
-    onAdd(p, size)
+    onAdd(p, size, color)
     setJustAdded(true)
     setTimeout(() => setJustAdded(false), 1200)
   }
@@ -59,7 +61,7 @@ function Card({ p, lang, t, onAdd, isFav, onFav }) {
       onMouseLeave={() => setHover(false)}
       whileHover={{ y: -8 }}
     >
-      <span className="rarity" style={{ background: r.color }}>{r[lang]}</span>
+      <span className="rarity" style={{ background: m.color }}>{m[lang]}</span>
 
       <motion.button
         className={`fav ${isFav ? 'on' : ''}`}
@@ -73,11 +75,20 @@ function Card({ p, lang, t, onAdd, isFav, onFav }) {
       </motion.button>
 
       <div className="card-media" style={{ background: `radial-gradient(circle at 50% 40%, ${p.color}22, transparent 70%)` }}>
-        <Tshirt product={p} lang={lang} hovered={hover} />
+        <Tshirt product={shown} lang={lang} hovered={hover} />
       </div>
 
       <h3>{p[lang].title}</h3>
       <p className="card-sub">{p[lang].sub}</p>
+
+      <div className="sizes">
+        <span className="sizes-label">{t.color}</span>
+        {[['black', t.c_black], ['white', t.c_white]].map(([c, label]) => (
+          <button key={c} className={`chip ${color === c ? 'on' : ''}`} onClick={() => setColor(c)}>
+            {label}
+          </button>
+        ))}
+      </div>
 
       <div className="sizes">
         <span className="sizes-label">{t.size}</span>
@@ -89,7 +100,7 @@ function Card({ p, lang, t, onAdd, isFav, onFav }) {
       </div>
 
       <div className="card-foot">
-        <span className="price">{fmt(p.price)}</span>
+        <span className="price">{fmt(priceFor(p, size))}</span>
         <motion.button className="btn btn-add" onClick={add} whileTap={{ scale: 0.92 }}>
           {justAdded ? t.added : t.add}
         </motion.button>
@@ -179,12 +190,12 @@ export default function App() {
   }
   useEffect(() => () => clearTimeout(toastTimer.current), [])
 
-  const addToCart = (p, size) => {
+  const addToCart = (p, size, color = 'black') => {
     setCart((c) => {
-      const key = p.id + size
+      const key = p.id + size + color
       const found = c.find((i) => i.key === key)
       if (found) return c.map((i) => (i.key === key ? { ...i, qty: i.qty + 1 } : i))
-      return [...c, { key, id: p.id, size, qty: 1 }]
+      return [...c, { key, id: p.id, size, color, qty: 1 }]
     })
   }
 
@@ -214,7 +225,14 @@ export default function App() {
       }
     }
     const p = PRODUCTS.find((x) => x.id === i.id)
-    return { price: p.price, title: p[lang].title, product: p }
+    if (!p) return { price: 0, title: '—', product: { id: i.id, color: '#ccc', ru: {}, kk: {} } }
+    const color = i.color ?? 'black'
+    const cLabel = color === 'white' ? t.c_white : t.c_black
+    return {
+      price: priceFor(p, i.size),
+      title: `${p[lang].title} · ${cLabel}`,
+      product: { ...p, photo: p.photos[color] },
+    }
   }
 
   const removeFromCart = (key) => setCart((c) => c.filter((i) => i.key !== key))
@@ -266,7 +284,7 @@ export default function App() {
 
   const onFav = (p) => setFavorites((f) => (f.includes(p.id) ? f.filter((x) => x !== p.id) : [...f, p.id]))
 
-  const shown = filter === 'all' ? PRODUCTS : PRODUCTS.filter((p) => p.rarity === filter)
+  const shown = filter === 'all' ? PRODUCTS : PRODUCTS.filter((p) => p.market === filter)
 
   const anyOverlay = openCart || openAccount || openDesigner
   const closeOverlays = () => { setOpenCart(false); setOpenAccount(false); setOpenDesigner(false) }
@@ -363,7 +381,7 @@ export default function App() {
           transition={{ delay: 0.3, type: 'spring', stiffness: 70, damping: 14 }}
         >
           <motion.div animate={{ y: [0, -14, 0] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}>
-            <Tshirt product={PRODUCTS[5]} lang={lang} hovered big />
+            <Tshirt product={{ ...PRODUCTS[5], photo: PRODUCTS[5].photos.black }} lang={lang} hovered big />
           </motion.div>
         </motion.div>
       </section>
@@ -387,7 +405,7 @@ export default function App() {
           <button className={`chip big ${filter === 'all' ? 'on' : ''}`} onClick={() => setFilter('all')}>
             {t.filter_all}
           </button>
-          {Object.entries(RARITY).map(([k, r]) => (
+          {Object.entries(MARKETS).map(([k, r]) => (
             <button
               key={k}
               className={`chip big ${filter === k ? 'on' : ''}`}
