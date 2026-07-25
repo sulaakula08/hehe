@@ -4,8 +4,9 @@ import Logo from './components/Logo.jsx'
 import Tshirt from './components/Tshirt.jsx'
 import Account from './components/Account.jsx'
 import Designer from './components/Designer.jsx'
+import Admin from './components/Admin.jsx'
 import Icon from './components/Icon.jsx'
-import { PRODUCTS, MARKETS, SIZES, T, fmt, priceFor, CUSTOM_PRICE } from './data.js'
+import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, T, fmt, CUSTOM_PRICE } from './data.js'
 
 const load = (k, d) => {
   try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch { return d }
@@ -34,7 +35,7 @@ function Ticker({ text }) {
 }
 
 /* ─────────────── карточка товара ─────────────── */
-function Card({ p, lang, t, onAdd, isFav, onFav }) {
+function Card({ p, lang, t, onAdd, isFav, onFav, priceOf }) {
   const [hover, setHover] = useState(false)
   const [size, setSize] = useState('M')
   const [color, setColor] = useState('black')
@@ -100,7 +101,7 @@ function Card({ p, lang, t, onAdd, isFav, onFav }) {
       </div>
 
       <div className="card-foot">
-        <span className="price">{fmt(priceFor(p, size))}</span>
+        <span className="price">{fmt(priceOf(p, size))}</span>
         <motion.button className="btn btn-add" onClick={add} whileTap={{ scale: 0.92 }}>
           {justAdded ? t.added : t.add}
         </motion.button>
@@ -158,13 +159,27 @@ export default function App() {
   const [orders, setOrders] = useState(() => load('hehe.orders', []))
   const [payMethod, setPayMethod] = useState(() => load('hehe.pay', 'card'))
 
+  // Каталог, размерная наценка и промокоды редактируются из админки и живут
+  // в localStorage. Каталог инициализируется дефолтами из data.js.
+  const [catalog, setCatalog] = useState(() => load('hehe.catalog', PRODUCTS))
+  const [sizeExtra, setSizeExtra] = useState(() => load('hehe.sizeExtra', SIZE_EXTRA))
+  const [promos, setPromos] = useState(() => load('hehe.promos', []))
+  const [promo, setPromo] = useState(null)   // применённый в корзине
+  const [promoInput, setPromoInput] = useState('')
+
   const [openCart, setOpenCart] = useState(false)
   const [openAccount, setOpenAccount] = useState(false)
   const [openDesigner, setOpenDesigner] = useState(false)
+  const [openAdmin, setOpenAdmin] = useState(() => window.location.hash === '#admin')
   const [toast, setToast] = useState(null)
   const [filter, setFilter] = useState('all')
   const [paying, setPaying] = useState(false)
   const t = T[lang]
+
+  // Товар ищем сначала в редактируемом каталоге, потом в дефолтах — чтобы
+  // старые заказы и избранное на удалённый товар не падали.
+  const findProduct = (id) => catalog.find((x) => x.id === id) || PRODUCTS.find((x) => x.id === id)
+  const priceOf = (p, size) => (p?.base ?? 0) + (sizeExtra[size] ?? 0)
 
   useEffect(() => save('hehe.lang', lang), [lang])
   useEffect(() => save('hehe.cart', cart), [cart])
@@ -172,7 +187,16 @@ export default function App() {
   useEffect(() => save('hehe.fav', favorites), [favorites])
   useEffect(() => save('hehe.orders', orders), [orders])
   useEffect(() => save('hehe.pay', payMethod), [payMethod])
+  useEffect(() => save('hehe.catalog', catalog), [catalog])
+  useEffect(() => save('hehe.sizeExtra', sizeExtra), [sizeExtra])
+  useEffect(() => save('hehe.promos', promos), [promos])
   useEffect(() => { document.documentElement.lang = lang === 'ru' ? 'ru' : 'kk' }, [lang])
+  // Админка открывается по адресу с #admin.
+  useEffect(() => {
+    const onHash = () => setOpenAdmin(window.location.hash === '#admin')
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
   useEffect(() => {
     save('hehe.theme', theme)
     document.documentElement.dataset.theme = theme
@@ -224,12 +248,12 @@ export default function App() {
         product: { id: i.key, color: fabric, ink, custom: { ...shown, fabric, ink }, ru: {}, kk: {} },
       }
     }
-    const p = PRODUCTS.find((x) => x.id === i.id)
+    const p = findProduct(i.id)
     if (!p) return { price: 0, title: '—', product: { id: i.id, color: '#ccc', ru: {}, kk: {} } }
     const color = i.color ?? 'black'
     const cLabel = color === 'white' ? t.c_white : t.c_black
     return {
-      price: priceFor(p, i.size),
+      price: priceOf(p, i.size),
       title: `${p[lang].title} · ${cLabel}`,
       product: { ...p, photo: p.photos[color] },
     }
@@ -240,9 +264,21 @@ export default function App() {
     .map((i) => (i.key === key ? { ...i, qty: i.qty + delta } : i))
     .filter((i) => i.qty > 0))
 
-  const total = cart.reduce((s, i) => s + resolveItem(i).price * i.qty, 0)
+  const subtotal = cart.reduce((s, i) => s + resolveItem(i).price * i.qty, 0)
   const count = cart.reduce((s, i) => s + i.qty, 0)
+  const discount = !promo ? 0
+    : Math.min(subtotal, promo.type === 'percent' ? Math.round(subtotal * promo.value / 100) : promo.value)
+  const total = Math.max(0, subtotal - discount)
   const cashback = Math.round(total * 0.07)
+
+  const applyPromo = () => {
+    const code = promoInput.trim().toUpperCase()
+    if (!code) return
+    const found = promos.find((p) => p.active && p.code === code)
+    if (!found) { setPromo(null); return say(t.promo_bad) }
+    setPromo(found)
+    say(t.promo_on)
+  }
 
   /** Оплата пока фейковая: карта всегда проходит, кошелёк проверяет баланс. */
   const checkout = async () => {
@@ -260,6 +296,8 @@ export default function App() {
       created_at: new Date().toISOString(),
       method: payMethod,
       total,
+      discount,
+      promo: promo?.code ?? null,
       coins_earned: payMethod === 'wallet' ? cashback : 0,
       items: cart.map((i) => {
         const { price, title } = resolveItem(i)
@@ -272,6 +310,7 @@ export default function App() {
     }
     setOrders((o) => [order, ...o])
     setCart([])
+    setPromo(null); setPromoInput('')
     setPaying(false)
     setOpenCart(false)
     say(payMethod === 'wallet' ? `${t.pay_ok} +${cashback} ${t.added_coins}` : t.pay_ok)
@@ -284,10 +323,16 @@ export default function App() {
 
   const onFav = (p) => setFavorites((f) => (f.includes(p.id) ? f.filter((x) => x !== p.id) : [...f, p.id]))
 
-  const shown = filter === 'all' ? PRODUCTS : PRODUCTS.filter((p) => p.market === filter)
+  const visible = catalog.filter((p) => !p.hidden)
+  const shown = filter === 'all' ? visible : visible.filter((p) => p.market === filter)
 
-  const anyOverlay = openCart || openAccount || openDesigner
-  const closeOverlays = () => { setOpenCart(false); setOpenAccount(false); setOpenDesigner(false) }
+  const closeAdmin = () => {
+    if (window.location.hash === '#admin') window.location.hash = ''
+    setOpenAdmin(false)
+  }
+
+  const anyOverlay = openCart || openAccount || openDesigner || openAdmin
+  const closeOverlays = () => { setOpenCart(false); setOpenAccount(false); setOpenDesigner(false); closeAdmin() }
 
   return (
     <>
@@ -422,7 +467,7 @@ export default function App() {
             {shown.map((p) => (
               <Card
                 key={p.id} p={p} lang={lang} t={t}
-                onAdd={addToCart}
+                onAdd={addToCart} priceOf={priceOf}
                 isFav={favorites.includes(p.id)} onFav={onFav}
               />
             ))}
@@ -527,6 +572,20 @@ export default function App() {
                   </small>
                 </div>
 
+                {cart.length > 0 && (
+                  <div className="promo">
+                    <input
+                      placeholder={t.promo_ph} value={promoInput}
+                      onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === 'Enter' && applyPromo()}
+                    />
+                    <button className="btn" onClick={applyPromo}>{t.apply}</button>
+                  </div>
+                )}
+
+                {discount > 0 && (
+                  <div className="row muted"><span>{t.discount} · {promo.code}</span><b>−{fmt(discount)}</b></div>
+                )}
                 <div className="row"><span>{t.total}</span><b>{fmt(total)}</b></div>
                 {payMethod === 'wallet' && (
                   <div className="row muted"><span>{t.cashback}</span><b className="with-icon"><Icon name="coin" size={15} /> +{cashback}</b></div>
@@ -557,6 +616,18 @@ export default function App() {
               wallet={wallet} orders={orders} favorites={favorites}
               onTopup={topup} onToggleFav={(id) => setFavorites((f) => f.filter((x) => x !== id))}
               onClose={() => setOpenAccount(false)} onToast={say} onAddToCart={addToCart}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {openAdmin && (
+            <Admin
+              key="admin" onClose={closeAdmin} onToast={say}
+              catalog={catalog} setCatalog={setCatalog}
+              sizeExtra={sizeExtra} setSizeExtra={setSizeExtra}
+              promos={promos} setPromos={setPromos}
+              orders={orders} priceOf={priceOf}
             />
           )}
         </AnimatePresence>

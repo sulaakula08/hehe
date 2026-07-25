@@ -552,3 +552,77 @@ a { color: inherit; text-decoration: none; }
 .step-icon { position: absolute; top: 18px; right: 20px; opacity: .85; }
 .pay-tag, .coins-badge { display: inline-flex; align-items: center; gap: 5px; }
 .qty button { display: grid; place-items: center; }
+
+/* ── промокод в корзине ── */
+.promo { display: flex; gap: 8px; }
+.promo input {
+  flex: 1; border: var(--line); border-radius: 12px; padding: 10px 12px;
+  font-family: inherit; font-size: 14px; background: var(--surface); color: var(--ink);
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.promo input:focus { outline: 3px solid var(--acid); outline-offset: 1px; }
+
+/* ── админ-панель ── */
+.admin-lock { gap: 14px; max-width: 380px; text-align: center; }
+.admin-lock .auth-form input {
+  border: var(--line); border-radius: 12px; padding: 12px 14px;
+  font-family: inherit; font-size: 15px; background: var(--surface); color: var(--ink); width: 100%;
+}
+
+.admin {
+  position: fixed; z-index: 61; inset: 3vh 50% auto 50%; translate: -50% 0;
+  width: min(940px, calc(100% - 24px)); max-height: 94vh;
+  background: var(--paper); border: var(--line); border-radius: 20px;
+  box-shadow: var(--shadow-lg); display: flex; flex-direction: column; overflow: hidden;
+}
+.admin-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: var(--line); }
+.admin-head h3 { font-size: 22px; }
+.admin-tabs { display: flex; gap: 4px; padding: 10px 20px 0; border-bottom: var(--line); flex-wrap: wrap; }
+.admin-tabs button {
+  border: 0; background: transparent; cursor: pointer; color: var(--ink);
+  padding: 10px 14px; font-weight: 700; font-size: 14px; border-radius: 10px 10px 0 0; opacity: .55;
+}
+.admin-tabs button.on { opacity: 1; background: var(--tint); }
+.admin-body { padding: 18px 20px; overflow-y: auto; }
+.admin-pane { display: flex; flex-direction: column; gap: 12px; }
+
+.admin-add, .admin-promo-add { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.admin select, .admin input {
+  border: 2px solid var(--ink); border-radius: 10px; padding: 8px 10px;
+  font-family: inherit; font-size: 14px; background: var(--surface); color: var(--ink);
+}
+.admin-promo-add input[type=number], .admin-price input { width: 90px; }
+.admin-promo-add input:first-child { text-transform: uppercase; width: 120px; }
+
+.admin-rows { display: flex; flex-direction: column; gap: 10px; }
+.admin-row { display: flex; gap: 12px; align-items: center; border: 2px solid var(--ink); border-radius: 12px; padding: 10px; background: var(--surface); }
+.admin-row.off { opacity: .5; }
+.admin-thumb { width: 46px; height: 52px; object-fit: contain; flex-shrink: 0; }
+.admin-fields { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.admin-fields > input { width: 100%; }
+.admin-inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.admin-price { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
+.link.danger { color: var(--hot); }
+
+.admin-sizes { display: flex; gap: 10px; flex-wrap: wrap; }
+.admin-sizes .admin-price { flex-direction: column; align-items: flex-start; gap: 3px; }
+
+.admin-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+.admin-stats div { flex: 1; min-width: 120px; border: 2px solid var(--ink); border-radius: 12px; padding: 12px; background: var(--surface); display: flex; flex-direction: column; gap: 2px; }
+.admin-stats b { font-family: 'Unbounded'; font-size: 18px; }
+.admin-stats span { font-size: 12px; opacity: .6; }
+.admin-top { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.admin-top li { display: flex; justify-content: space-between; font-size: 14px; border-bottom: 1px dashed rgba(128,128,128,.3); padding: 4px 0; }
+.admin-order { border: 2px solid var(--ink); border-radius: 12px; padding: 10px; background: var(--surface); }
+.admin-order-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.admin-order-sum { margin-left: auto; font-family: 'Unbounded'; }
+
+.admin-promo { display: flex; align-items: center; gap: 12px; border: 2px solid var(--ink); border-radius: 12px; padding: 10px 12px; background: var(--surface); }
+.admin-promo.off { opacity: .5; }
+.admin-promo b:first-child { font-family: 'Unbounded'; letter-spacing: .08em; }
+.admin-promo .link { margin-left: auto; }
+
+@media (max-width: 560px) {
+  .admin { inset: 0; width: 100%; max-height: 100vh; border-radius: 0; border: 0; }
+  .admin-row { flex-wrap: wrap; }
+}
