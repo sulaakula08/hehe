@@ -6,7 +6,8 @@ import Account from './components/Account.jsx'
 import Designer from './components/Designer.jsx'
 import Admin from './components/Admin.jsx'
 import Icon from './components/Icon.jsx'
-import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, T, fmt, CUSTOM_PRICE } from './data.js'
+import Gate from './components/Gate.jsx'
+import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, T, fmt, DEFAULT_SETTINGS } from './data.js'
 
 const load = (k, d) => {
   try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch { return d }
@@ -164,6 +165,9 @@ export default function App() {
   const [catalog, setCatalog] = useState(() => load('hehe.catalog', PRODUCTS))
   const [sizeExtra, setSizeExtra] = useState(() => load('hehe.sizeExtra', SIZE_EXTRA))
   const [promos, setPromos] = useState(() => load('hehe.promos', []))
+  const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS, ...load('hehe.settings', {}) }))
+  // Вход демонстрационный: храним только почту и признак админа, пароля тут нет.
+  const [auth, setAuth] = useState(() => load('hehe.auth', null))
   const [promo, setPromo] = useState(null)   // применённый в корзине
   const [promoInput, setPromoInput] = useState('')
   // Данные доставки: сохраняем, чтобы не вводить заново.
@@ -193,6 +197,8 @@ export default function App() {
   useEffect(() => save('hehe.sizeExtra', sizeExtra), [sizeExtra])
   useEffect(() => save('hehe.promos', promos), [promos])
   useEffect(() => save('hehe.customer', customer), [customer])
+  useEffect(() => save('hehe.settings', settings), [settings])
+  useEffect(() => save('hehe.auth', auth), [auth])
   useEffect(() => { document.documentElement.lang = lang === 'ru' ? 'ru' : 'kk' }, [lang])
   // Админка открывается по адресу с #admin.
   useEffect(() => {
@@ -246,7 +252,7 @@ export default function App() {
         ? `${t.designer}: «${firstText}»${both ? ` (${t.d_both})` : ''}`
         : `${t.designer}${both ? ` (${t.d_both})` : ''}`
       return {
-        price: CUSTOM_PRICE,
+        price: settings.customPrice,
         title: label,
         product: { id: i.key, color: fabric, ink, custom: { ...shown, fabric, ink }, ru: {}, kk: {} },
       }
@@ -272,7 +278,7 @@ export default function App() {
   const discount = !promo ? 0
     : Math.min(subtotal, promo.type === 'percent' ? Math.round(subtotal * promo.value / 100) : promo.value)
   const total = Math.max(0, subtotal - discount)
-  const cashback = Math.round(total * 0.07)
+  const cashback = Math.round(total * (settings.cashback ?? 0) / 100)
 
   const applyPromo = () => {
     const code = promoInput.trim().toUpperCase()
@@ -341,8 +347,56 @@ export default function App() {
     setOpenAdmin(false)
   }
 
-  const anyOverlay = openCart || openAccount || openDesigner || openAdmin
-  const closeOverlays = () => { setOpenCart(false); setOpenAccount(false); setOpenDesigner(false); closeAdmin() }
+  const logout = () => {
+    closeAdmin()
+    setAuth(null)
+  }
+
+  // Оверлеи не считают админку: она теперь отдельная страница, а не окно.
+  const anyOverlay = openCart || openAccount || openDesigner
+  const closeOverlays = () => { setOpenCart(false); setOpenAccount(false); setOpenDesigner(false) }
+
+  // Витрина закрыта демо-входом. Пароль не сохраняется — только почта и роль.
+  if (!auth) {
+    return (
+      <Gate
+        t={t} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme}
+        onEnter={(a) => {
+          setAuth(a)
+          if (a.admin) say(t.hello_admin)
+        }}
+      />
+    )
+  }
+
+  // Админка — полноэкранная страница вместо витрины, а не модальное окно.
+  if (openAdmin && auth.admin) {
+    return (
+      <>
+        <Admin
+          auth={auth} onLogout={logout} onClose={closeAdmin} onToast={say}
+          catalog={catalog} setCatalog={setCatalog}
+          sizeExtra={sizeExtra} setSizeExtra={setSizeExtra}
+          promos={promos} setPromos={setPromos}
+          orders={orders} setOrders={setOrders}
+          settings={settings} setSettings={setSettings}
+          priceOf={priceOf}
+        />
+        <AnimatePresence>
+          {toast && (
+            <motion.div
+              key={toast.id} className="toast"
+              initial={{ opacity: 0, y: 40, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            >
+              {toast.msg}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </>
+    )
+  }
 
   return (
     <>
@@ -373,9 +427,11 @@ export default function App() {
             ))}
           </div>
 
-          <button className="btn btn-ghost" onClick={showAdmin} title={t.nav_admin}>
-            <Icon name="settings" /> {t.nav_admin}
-          </button>
+          {auth.admin && (
+            <button className="btn btn-ghost" onClick={showAdmin} title={t.nav_admin}>
+              <Icon name="settings" /> <span className="hide-sm">{t.nav_admin}</span>
+            </button>
+          )}
 
           <button className="btn btn-ghost" onClick={() => setOpenAccount(true)}>
             <Icon name="wallet" /> {fmt(wallet.balance)}
@@ -511,9 +567,8 @@ export default function App() {
       <footer className="footer">
         <Logo size={34} />
         <p>{t.footer}</p>
-        <button className="btn btn-ghost" onClick={showAdmin}>
-          <Icon name="settings" /> {t.nav_admin}
-        </button>
+        <span className="foot-who">{auth.email}</span>
+        <button className="link" onClick={logout}>{t.logout}</button>
         <span>© {new Date().getFullYear()} funymems.cc</span>
       </footer>
 
@@ -637,6 +692,7 @@ export default function App() {
               key="designer" t={t} lang={lang}
               onClose={() => setOpenDesigner(false)}
               onAdd={addCustomToCart}
+              price={settings.customPrice}
               onToast={say}
             />
           )}
@@ -653,17 +709,6 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        <AnimatePresence>
-          {openAdmin && (
-            <Admin
-              key="admin" onClose={closeAdmin} onToast={say}
-              catalog={catalog} setCatalog={setCatalog}
-              sizeExtra={sizeExtra} setSizeExtra={setSizeExtra}
-              promos={promos} setPromos={setPromos}
-              orders={orders} priceOf={priceOf}
-            />
-          )}
-        </AnimatePresence>
       </div>
 
       {/* ── тост ── */}

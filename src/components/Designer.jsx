@@ -82,7 +82,7 @@ function Slider({ label, value, min, max, step, onInput, onStart }) {
   )
 }
 
-export default function Designer({ t, lang, onClose, onAdd, onToast }) {
+export default function Designer({ t, lang, onClose, onAdd, onToast, price = CUSTOM_PRICE }) {
   const [d, setD] = useState(START)
   const [tab, setTab] = useState('text')
   const [size, setSize] = useState('M')
@@ -401,7 +401,7 @@ export default function Designer({ t, lang, onClose, onAdd, onToast }) {
         >
           {t.d_center}
         </button>
-        <span className="price">{fmt(CUSTOM_PRICE)}</span>
+        <span className="price">{fmt(price)}</span>
         <button className="btn btn-solid" onClick={add} disabled={busy}>{t.add}</button>
       </div>
     </motion.div>
