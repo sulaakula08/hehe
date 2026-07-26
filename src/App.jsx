@@ -12,6 +12,7 @@ import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, T, fmt, DEFAULT_SETTINGS } from '
 const load = (k, d) => {
   try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch { return d }
 }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const save = (k, v) => {
   // Дизайны из конструктора хранят картинку, поэтому запись может упереться
   // в квоту localStorage — состояние в памяти при этом остаётся целым.
@@ -32,6 +33,68 @@ function Ticker({ text }) {
         ))}
       </motion.div>
     </div>
+  )
+}
+
+/* ─────────────── экран «оплачено» ─────────────── */
+/** Накрывает корзину после оплаты: галочка рисуется штрихом, потом сумма. */
+function PaidScreen({ t, paid }) {
+  return (
+    <motion.div
+      className="paid"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+    >
+      <motion.svg
+        className="paid-mark" viewBox="0 0 52 52"
+        fill="none" stroke="currentColor" strokeWidth="3.5"
+        strokeLinecap="round" strokeLinejoin="round"
+        initial={{ scale: 0.7 }} animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 220, damping: 14 }}
+      >
+        <motion.circle
+          cx="26" cy="26" r="23"
+          initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        />
+        <motion.path
+          d="M15 26.5 L22.5 34 L37 19"
+          initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+          transition={{ delay: 0.34, duration: 0.32, ease: 'easeOut' }}
+        />
+      </motion.svg>
+
+      <motion.b
+        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        {t.paid_title}
+      </motion.b>
+      <motion.span
+        className="paid-sum"
+        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.58 }}
+      >
+        {fmt(paid.total)}
+      </motion.span>
+      <motion.span
+        className="muted"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        transition={{ delay: 0.66 }}
+      >
+        {t.paid_sub}
+      </motion.span>
+
+      {paid.coins > 0 && (
+        <motion.span
+          className="paid-coins"
+          initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.74, type: 'spring', stiffness: 300, damping: 16 }}
+        >
+          <Icon name="coin" size={15} /> +{paid.coins} {t.added_coins}
+        </motion.span>
+      )}
+    </motion.div>
   )
 }
 
@@ -180,6 +243,7 @@ export default function App() {
   const [toast, setToast] = useState(null)
   const [filter, setFilter] = useState('all')
   const [paying, setPaying] = useState(false)
+  const [paid, setPaid] = useState(null)     // экран «оплачено» поверх корзины
   const t = T[lang]
 
   // Товар ищем сначала в редактируемом каталоге, потом в дефолтах — чтобы
@@ -320,11 +384,23 @@ export default function App() {
       setWallet((w) => ({ balance: w.balance - total, coins: w.coins + cashback }))
     }
     setOrders((o) => [order, ...o])
+
+    // Порядок важен. Сначала наплывает экран «оплачено», и только под ним
+    // чистим корзину: очистка на виду схлопывает форму доставки, промокод и
+    // итоги разом — шторка дёргается. Под непрозрачным экраном это не видно.
+    const earned = payMethod === 'wallet' ? cashback : 0
+    setPaying(false)
+    setPaid({ total, coins: earned })
+
+    await sleep(280)                    // экран успел стать непрозрачным
     setCart([])
     setPromo(null); setPromoInput('')
-    setPaying(false)
+
+    await sleep(1500)                   // даём прочитать сумму
     setOpenCart(false)
-    say(payMethod === 'wallet' ? `${t.pay_ok} +${cashback} ${t.added_coins}` : t.pay_ok)
+    // Ждём, пока шторка уедет, и только тогда снимаем экран оплаты.
+    setTimeout(() => setPaid(null), 400)
+    say(earned ? `${t.pay_ok} +${earned} ${t.added_coins}` : t.pay_ok)
   }
 
   const topup = (amount) => {
@@ -354,7 +430,11 @@ export default function App() {
 
   // Оверлеи не считают админку: она теперь отдельная страница, а не окно.
   const anyOverlay = openCart || openAccount || openDesigner
-  const closeOverlays = () => { setOpenCart(false); setOpenAccount(false); setOpenDesigner(false) }
+  // Пока играет экран «оплачено», корзину не закрываем: анимация должна доиграть.
+  const closeOverlays = () => {
+    if (!paid) setOpenCart(false)
+    setOpenAccount(false); setOpenDesigner(false)
+  }
 
   // Витрина закрыта демо-входом. Пароль не сохраняется — только почта и роль.
   if (!auth) {
@@ -592,7 +672,7 @@ export default function App() {
             >
               <div className="drawer-head">
                 <h3>{t.cart}</h3>
-                <button className="x" onClick={() => setOpenCart(false)} aria-label="close"><Icon name="close" size={15} /></button>
+                <button className="x" onClick={() => !paid && setOpenCart(false)} aria-label="close"><Icon name="close" size={15} /></button>
               </div>
 
               {!cart.length && <p className="empty">{t.cart_empty}</p>}
@@ -682,6 +762,10 @@ export default function App() {
                   {paying ? t.processing : t.checkout}
                 </button>
               </div>
+
+              <AnimatePresence>
+                {paid && <PaidScreen key="paid" t={t} paid={paid} />}
+              </AnimatePresence>
             </motion.aside>
           )}
         </AnimatePresence>

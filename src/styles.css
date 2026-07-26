@@ -705,3 +705,23 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 520px) {
   .hide-sm { display: none; }
 }
+
+/* ── экран «оплачено» поверх корзины ── */
+.drawer { position: fixed; }
+.paid {
+  position: absolute; inset: 0; z-index: 2;
+  background: var(--paper);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 30px; text-align: center;
+}
+.paid-mark { width: 96px; height: 96px; color: var(--mint); margin-bottom: 6px; }
+.paid b { font-family: 'Unbounded'; font-size: 24px; }
+.paid-sum { font-family: 'Unbounded'; font-size: 34px; font-weight: 800; color: var(--hot); }
+.paid-coins {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
+  border: 2px solid var(--ink); border-radius: 999px; padding: 8px 14px;
+  background: var(--acid); color: var(--on-acid); font-weight: 800; font-size: 14px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .paid, .paid * { animation: none !important; }
+}
