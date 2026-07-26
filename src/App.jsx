@@ -331,6 +331,11 @@ export default function App() {
   const visible = catalog.filter((p) => !p.hidden)
   const shown = filter === 'all' ? visible : visible.filter((p) => p.market === filter)
 
+  const showAdmin = () => {
+    window.location.hash = '#admin'
+    setOpenAdmin(true)
+  }
+
   const closeAdmin = () => {
     if (window.location.hash === '#admin') window.location.hash = ''
     setOpenAdmin(false)
@@ -349,6 +354,7 @@ export default function App() {
         <nav className="nav-links">
           <a href="#catalog">{t.nav_shop}</a>
           <a href="#how">{t.nav_how}</a>
+          <a href="#admin" onClick={(e) => { e.preventDefault(); showAdmin() }}>{t.nav_admin}</a>
         </nav>
         <div className="nav-right">
           <button
@@ -502,6 +508,9 @@ export default function App() {
       <footer className="footer">
         <Logo size={34} />
         <p>{t.footer}</p>
+        <button className="btn btn-ghost" onClick={showAdmin}>
+          <Icon name="settings" /> {t.nav_admin}
+        </button>
         <span>© {new Date().getFullYear()} funymems.cc</span>
       </footer>
 
