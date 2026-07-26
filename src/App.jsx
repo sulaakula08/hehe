@@ -166,6 +166,8 @@ export default function App() {
   const [promos, setPromos] = useState(() => load('hehe.promos', []))
   const [promo, setPromo] = useState(null)   // применённый в корзине
   const [promoInput, setPromoInput] = useState('')
+  // Данные доставки: сохраняем, чтобы не вводить заново.
+  const [customer, setCustomer] = useState(() => load('hehe.customer', { name: '', phone: '', city: '', address: '' }))
 
   const [openCart, setOpenCart] = useState(false)
   const [openAccount, setOpenAccount] = useState(false)
@@ -190,6 +192,7 @@ export default function App() {
   useEffect(() => save('hehe.catalog', catalog), [catalog])
   useEffect(() => save('hehe.sizeExtra', sizeExtra), [sizeExtra])
   useEffect(() => save('hehe.promos', promos), [promos])
+  useEffect(() => save('hehe.customer', customer), [customer])
   useEffect(() => { document.documentElement.lang = lang === 'ru' ? 'ru' : 'kk' }, [lang])
   // Админка открывается по адресу с #admin.
   useEffect(() => {
@@ -283,6 +286,7 @@ export default function App() {
   /** Оплата пока фейковая: карта всегда проходит, кошелёк проверяет баланс. */
   const checkout = async () => {
     if (!cart.length || paying) return
+    if (!customer.name.trim() || !customer.phone.trim()) return say(t.fill_ship)
     if (payMethod === 'wallet' && wallet.balance < total) return say(t.pay_fail)
 
     setPaying(true)
@@ -298,6 +302,7 @@ export default function App() {
       total,
       discount,
       promo: promo?.code ?? null,
+      customer: { ...customer },
       coins_earned: payMethod === 'wallet' ? cashback : 0,
       items: cart.map((i) => {
         const { price, title } = resolveItem(i)
@@ -551,6 +556,22 @@ export default function App() {
               </div>
 
               <div className="drawer-foot">
+                {cart.length > 0 && (
+                  <div className="ship">
+                    <span className="pay-label">{t.ship_title}</span>
+                    <div className="ship-grid">
+                      <input placeholder={t.f_name} value={customer.name}
+                        onChange={(e) => setCustomer((c) => ({ ...c, name: e.target.value }))} />
+                      <input placeholder={t.f_phone} inputMode="tel" value={customer.phone}
+                        onChange={(e) => setCustomer((c) => ({ ...c, phone: e.target.value }))} />
+                      <input placeholder={t.f_city} value={customer.city}
+                        onChange={(e) => setCustomer((c) => ({ ...c, city: e.target.value }))} />
+                      <input placeholder={t.f_address} value={customer.address}
+                        onChange={(e) => setCustomer((c) => ({ ...c, address: e.target.value }))} />
+                    </div>
+                  </div>
+                )}
+
                 <div className="pay-methods">
                   <span className="pay-label">{t.pay_method}</span>
                   <div className="d-row">

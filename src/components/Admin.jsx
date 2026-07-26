@@ -16,6 +16,7 @@ export default function Admin({
   const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('hehe.admin') === '1')
   const [pass, setPass] = useState('')
   const [tab, setTab] = useState('catalog')
+  const [addSlug, setAddSlug] = useState(ALL_SLUGS[0])
 
   const login = (e) => {
     e.preventDefault()
@@ -44,8 +45,11 @@ export default function Admin({
     onToast('Товар добавлен')
   }
 
+  // factor в процентах: 110 = ×1.1. Делим на 100 (проценты) и ещё на 100,
+  // затем ×100 — округление до сотен тенге. Раньше второго деления не было,
+  // и цены раздувались в 100 раз.
   const bump = (factor) =>
-    setCatalog((c) => c.map((p) => ({ ...p, base: Math.round((p.base * factor) / 100) * 100 })))
+    setCatalog((c) => c.map((p) => ({ ...p, base: Math.max(100, Math.round(p.base * factor / 10000) * 100) })))
 
   /* ── статистика ── */
   const stats = useMemo(() => {
@@ -108,11 +112,10 @@ export default function Admin({
         {tab === 'catalog' && (
           <div className="admin-pane">
             <div className="admin-add">
-              <select id="add-slug" defaultValue="">
-                <option value="" disabled>Добавить из /tees…</option>
+              <select value={addSlug} onChange={(e) => setAddSlug(e.target.value)}>
                 {ALL_SLUGS.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
-              <button className="btn btn-solid" onClick={() => addProduct(document.getElementById('add-slug').value)}>
+              <button className="btn btn-solid" onClick={() => addProduct(addSlug)}>
                 <Icon name="plus" size={14} /> Добавить
               </button>
               <span className="muted">товаров: {catalog.length}, видно: {catalog.filter((p) => !p.hidden).length}</span>
@@ -147,13 +150,18 @@ export default function Admin({
         {/* ── Цены ── */}
         {tab === 'pricing' && (
           <div className="admin-pane">
-            <p className="muted">Наценка за размер (прибавляется к базовой цене товара).</p>
+            <p className="muted">
+              <b>Надбавка</b> к базовой цене за размер — не цена. 0 = размер стоит как база;
+              обычно S/M/L без надбавки, а XL/XXL дороже.
+            </p>
             <div className="admin-sizes">
               {SIZES.map((s) => (
                 <label key={s} className="admin-price">
                   <span>{s}</span>
+                  <span className="admin-plus">+</span>
                   <input type="number" step={100} value={sizeExtra[s] ?? 0}
                     onChange={(e) => setSizeExtra((x) => ({ ...x, [s]: Number(e.target.value) || 0 }))} />
+                  <span className="muted">₸</span>
                 </label>
               ))}
             </div>
@@ -201,6 +209,13 @@ export default function Admin({
                   <span className="pay-tag"><Icon name={o.method === 'wallet' ? 'wallet' : 'card'} size={13} /> {o.method}</span>
                   <b className="admin-order-sum">{fmt(o.total)}</b>
                 </div>
+                {o.customer?.name && (
+                  <div className="admin-cust">
+                    <b>{o.customer.name}</b> · {o.customer.phone}
+                    {(o.customer.city || o.customer.address) &&
+                      <span className="muted"> · {[o.customer.city, o.customer.address].filter(Boolean).join(', ')}</span>}
+                  </div>
+                )}
                 <div className="muted">{(o.items || []).map((i) => `${i.title} ×${i.qty}`).join(' · ')}</div>
               </div>
             ))}
