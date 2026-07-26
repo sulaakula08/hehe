@@ -354,7 +354,6 @@ export default function App() {
         <nav className="nav-links">
           <a href="#catalog">{t.nav_shop}</a>
           <a href="#how">{t.nav_how}</a>
-          <a href="#admin" onClick={(e) => { e.preventDefault(); showAdmin() }}>{t.nav_admin}</a>
         </nav>
         <div className="nav-right">
           <button
@@ -373,6 +372,10 @@ export default function App() {
               </button>
             ))}
           </div>
+
+          <button className="btn btn-ghost" onClick={showAdmin} title={t.nav_admin}>
+            <Icon name="settings" /> {t.nav_admin}
+          </button>
 
           <button className="btn btn-ghost" onClick={() => setOpenAccount(true)}>
             <Icon name="wallet" /> {fmt(wallet.balance)}

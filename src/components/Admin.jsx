@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import Icon from './Icon.jsx'
-import { PRODUCTS, MARKETS, SIZES, fmt } from '../data.js'
+import { PRODUCTS, MARKETS, SIZES, fmt, asset } from '../data.js'
 
 // Демо-пароль. Настоящей защиты тут нет — он виден в коде, а данные лежат
 // в браузере. Панель для правки витрины, не для реальной безопасности.
@@ -124,7 +124,7 @@ export default function Admin({
             <div className="admin-rows">
               {catalog.map((p) => (
                 <div key={p.id} className={`admin-row ${p.hidden ? 'off' : ''}`}>
-                  <img src={p.photos?.black} alt="" className="admin-thumb" />
+                  <img src={asset(p.photos?.black)} alt="" className="admin-thumb" />
                   <div className="admin-fields">
                     <input value={p.ru.title} onChange={(e) => patchText(p.id, 'ru', 'title', e.target.value)} placeholder="Название" />
                     <div className="admin-inline">

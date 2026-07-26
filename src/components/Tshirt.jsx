@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { FONTS } from '../data.js'
+import { FONTS, asset } from '../data.js'
 
 // Печатная зона в координатах viewBox, относительно центра груди (150, 158).
 export const PRINT_ZONE = { x: 56, yTop: -74, yBottom: 96 }
@@ -211,7 +211,7 @@ export default function Tshirt({
   if (product.photo) {
     return (
       <motion.img
-        src={product.photo}
+        src={asset(product.photo)}
         alt={product[lang].title}
         className="tee tee-photo"
         animate={hovered ? { scale: 1.04 } : { scale: 1 }}
