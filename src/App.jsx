@@ -36,12 +36,60 @@ function Ticker({ text }) {
   )
 }
 
+/* ─────────────── летящая копия товара ─────────────── */
+// Точки квадратичной кривой Безье от 0 до 1. Три ключевых кадра давали
+// излом посередине — между кадрами framer идёт по прямой, так что дугу
+// приходится задавать частой выборкой.
+const STEPS = 14
+const bezier = (dx, dy, lift) => {
+  const p1x = dx * 0.5, p1y = dy * 0.5 - lift        // контрольная точка выше хорды
+  const xs = [], ys = []
+  for (let i = 0; i <= STEPS; i++) {
+    const u = i / STEPS, n = 1 - u
+    xs.push(n * n * 0 + 2 * n * u * p1x + u * u * dx)
+    ys.push(n * n * 0 + 2 * n * u * p1y + u * u * dy)
+  }
+  return { xs, ys }
+}
+
+/**
+ * Копия футболки летит от карточки к иконке корзины по дуге: сначала
+ * подбрасывает вверх, потом затягивает в корзину, уменьшаясь.
+ * Живёт на fixed-слое поверх всего и сама себя убирает по завершении.
+ */
+function Flyer({ flight, lang, onDone }) {
+  const { from, to, product } = flight
+  const dx = to.x - (from.left + from.width / 2)
+  const dy = to.y - (from.top + from.height / 2)
+  const lift = Math.min(150, Math.abs(dx) * 0.3 + 70)
+
+  const { xs, ys } = bezier(dx, dy, lift)
+  // Равномерные доли времени: скорость по дуге постоянная, без рывков.
+  const times = xs.map((_, i) => i / STEPS)
+  const scale = times.map((u) => 1 - 0.88 * u * u)     // тает к концу
+  const opacity = times.map((u) => (u < 0.75 ? 1 : 1 - (u - 0.75) / 0.25 * 0.7))
+
+  return (
+    <motion.div
+      className="flyer"
+      style={{ left: from.left, top: from.top, width: from.width, height: from.height }}
+      initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
+      animate={{ x: xs, y: ys, scale, opacity, rotate: times.map((u) => u * 14) }}
+      transition={{ duration: 0.7, times, ease: 'linear' }}
+      onAnimationComplete={onDone}
+    >
+      <Tshirt product={product} lang={lang} />
+    </motion.div>
+  )
+}
+
 /* ─────────────── экран «оплачено» ─────────────── */
 /** Накрывает корзину после оплаты: галочка рисуется штрихом, потом сумма. */
-function PaidScreen({ t, paid }) {
+function PaidScreen({ t, paid, onSkip }) {
   return (
     <motion.div
       className="paid"
+      onClick={onSkip}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
     >
@@ -103,15 +151,12 @@ function Card({ p, lang, t, onAdd, isFav, onFav, priceOf }) {
   const [hover, setHover] = useState(false)
   const [size, setSize] = useState('M')
   const [color, setColor] = useState('black')
-  const [justAdded, setJustAdded] = useState(false)
+  const mediaRef = useRef(null)
   const m = MARKETS[p.market]
   const shown = { ...p, photo: p.photos[color] }
 
-  const add = () => {
-    onAdd(p, size, color)
-    setJustAdded(true)
-    setTimeout(() => setJustAdded(false), 1200)
-  }
+  // Отдаём наверх прямоугольник картинки: от него полетит копия в корзину.
+  const add = () => onAdd(p, size, color, mediaRef.current?.getBoundingClientRect())
 
   return (
     <motion.article
@@ -139,7 +184,7 @@ function Card({ p, lang, t, onAdd, isFav, onFav, priceOf }) {
         <Icon name="heart" size={17} style={{ fill: isFav ? 'currentColor' : 'none' }} />
       </motion.button>
 
-      <div className="card-media" style={{ background: `radial-gradient(circle at 50% 40%, ${p.color}22, transparent 70%)` }}>
+      <div ref={mediaRef} className="card-media" style={{ background: `radial-gradient(circle at 50% 40%, ${p.color}22, transparent 70%)` }}>
         <Tshirt product={shown} lang={lang} hovered={hover} />
       </div>
 
@@ -166,8 +211,8 @@ function Card({ p, lang, t, onAdd, isFav, onFav, priceOf }) {
 
       <div className="card-foot">
         <span className="price">{fmt(priceOf(p, size))}</span>
-        <motion.button className="btn btn-add" onClick={add} whileTap={{ scale: 0.92 }}>
-          {justAdded ? t.added : t.add}
+        <motion.button className="btn btn-add" onClick={add} whileTap={{ scale: 0.88 }}>
+          {t.add}
         </motion.button>
       </div>
     </motion.article>
@@ -244,6 +289,9 @@ export default function App() {
   const [filter, setFilter] = useState('all')
   const [paying, setPaying] = useState(false)
   const [paid, setPaid] = useState(null)     // экран «оплачено» поверх корзины
+  const [flights, setFlights] = useState([]) // летящие в корзину копии товара
+  const [cartStep, setCartStep] = useState('items')  // items → form
+  const cartBtnRef = useRef(null)
   const t = T[lang]
 
   // Товар ищем сначала в редактируемом каталоге, потом в дефолтах — чтобы
@@ -262,6 +310,10 @@ export default function App() {
   useEffect(() => save('hehe.promos', promos), [promos])
   useEffect(() => save('hehe.customer', customer), [customer])
   useEffect(() => save('hehe.settings', settings), [settings])
+  // Корзина всегда открывается со списком, а не на форме с прошлого раза.
+  useEffect(() => { if (!openCart) setCartStep('items') }, [openCart])
+  // Убрали последний товар, стоя на форме — возвращаемся к списку.
+  useEffect(() => { if (!cart.length) setCartStep('items') }, [cart.length])
   useEffect(() => save('hehe.auth', auth), [auth])
   useEffect(() => { document.documentElement.lang = lang === 'ru' ? 'ru' : 'kk' }, [lang])
   // Админка открывается по адресу с #admin.
@@ -287,7 +339,20 @@ export default function App() {
   }
   useEffect(() => () => clearTimeout(toastTimer.current), [])
 
-  const addToCart = (p, size, color = 'black') => {
+  /** Запускает копию товара из точки from к иконке корзины. */
+  const launchFlight = (product, from) => {
+    const btn = cartBtnRef.current?.getBoundingClientRect()
+    // Нет иконки (узкий экран) или не дали прямоугольник — просто без полёта.
+    if (!btn || !from) return
+    const id = `${Date.now()}-${Math.random()}`
+    setFlights((f) => [...f, {
+      id, from, product,
+      to: { x: btn.left + btn.width / 2, y: btn.top + btn.height / 2 },
+    }])
+  }
+
+  const addToCart = (p, size, color = 'black', from) => {
+    launchFlight({ ...p, photo: p.photos?.[color] }, from)
     setCart((c) => {
       const key = p.id + size + color
       const found = c.find((i) => i.key === key)
@@ -396,7 +461,7 @@ export default function App() {
     setCart([])
     setPromo(null); setPromoInput('')
 
-    await sleep(1500)                   // даём прочитать сумму
+    await sleep(1200)                   // даём прочитать сумму
     setOpenCart(false)
     // Ждём, пока шторка уедет, и только тогда снимаем экран оплаты.
     setTimeout(() => setPaid(null), 400)
@@ -430,11 +495,13 @@ export default function App() {
 
   // Оверлеи не считают админку: она теперь отдельная страница, а не окно.
   const anyOverlay = openCart || openAccount || openDesigner
-  // Пока играет экран «оплачено», корзину не закрываем: анимация должна доиграть.
   const closeOverlays = () => {
-    if (!paid) setOpenCart(false)
-    setOpenAccount(false); setOpenDesigner(false)
+    setOpenCart(false); setOpenAccount(false); setOpenDesigner(false)
+    setPaid(null)
   }
+
+  /** Досрочно убрать экран «оплачено» — ждать анимацию никто не обязан. */
+  const skipPaid = () => { setPaid(null); setOpenCart(false) }
 
   // Витрина закрыта демо-входом. Пароль не сохраняется — только почта и роль.
   if (!auth) {
@@ -518,9 +585,11 @@ export default function App() {
           </button>
 
           <motion.button
+            ref={cartBtnRef}
             className="btn btn-solid"
             onClick={() => setOpenCart(true)}
-            animate={count ? { scale: [1, 1.12, 1] } : {}}
+            animate={count ? { scale: [1, 1.22, 0.96, 1] } : {}}
+            transition={{ duration: 0.42, ease: 'easeOut' }}
             key={count}
           >
             <Icon name="cart" /> {count}
@@ -671,100 +740,135 @@ export default function App() {
               transition={{ type: 'spring', stiffness: 260, damping: 30 }}
             >
               <div className="drawer-head">
-                <h3>{t.cart}</h3>
-                <button className="x" onClick={() => !paid && setOpenCart(false)} aria-label="close"><Icon name="close" size={15} /></button>
+                {cartStep === 'form' && (
+                  <button className="x back" onClick={() => setCartStep('items')} aria-label="назад">
+                    <Icon name="undo" size={15} />
+                  </button>
+                )}
+                <h3>{cartStep === 'form' ? t.checkout_title : t.cart}</h3>
+                <button className="x" onClick={() => { setOpenCart(false); setPaid(null) }} aria-label="close"><Icon name="close" size={15} /></button>
               </div>
 
-              {!cart.length && <p className="empty">{t.cart_empty}</p>}
+              {/* Шаг 1 — что лежит в корзине. Шаг 2 — данные и оплата.
+                  Раньше форма доставки висела под списком всегда, и корзина
+                  открывалась сразу простынёй из полей. */}
+              <AnimatePresence mode="wait" initial={false}>
+                {cartStep === 'items' ? (
+                  <motion.div
+                    key="step-items" className="cart-step"
+                    initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}
+                    transition={{ duration: 0.22, ease: 'easeOut' }}
+                  >
+                    {!cart.length && <p className="empty">{t.cart_empty}</p>}
 
-              <div className="drawer-list">
-                {cart.map((i) => {
-                  const { product, title, price } = resolveItem(i)
-                  return (
-                    <motion.div key={i.key} layout className="line"
-                      initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 30 }}>
-                      <div className="line-thumb" style={{ background: product.color }}>
-                        <Tshirt product={product} lang={lang} />
+                    <div className="drawer-list">
+                      {cart.map((i) => {
+                        const { product, title, price } = resolveItem(i)
+                        return (
+                          <motion.div key={i.key} layout className="line"
+                            initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 30 }}>
+                            <div className="line-thumb" style={{ background: product.color }}>
+                              <Tshirt product={product} lang={lang} />
+                            </div>
+                            <div className="line-info">
+                              <b>{title}</b>
+                              <span>{i.size}</span>
+                              <div className="qty">
+                                <button onClick={() => setQty(i.key, -1)} aria-label="−"><Icon name="minus" size={14} /></button>
+                                <b>{i.qty}</b>
+                                <button onClick={() => setQty(i.key, +1)} aria-label="+"><Icon name="plus" size={14} /></button>
+                              </div>
+                            </div>
+                            <div className="line-end">
+                              <span className="line-price">{fmt(price * i.qty)}</span>
+                              <button className="link" onClick={() => removeFromCart(i.key)}>{t.remove}</button>
+                            </div>
+                          </motion.div>
+                        )
+                      })}
+                    </div>
+
+                    {cart.length > 0 && (
+                      <div className="drawer-foot">
+                        <div className="row"><span>{t.total}</span><b>{fmt(total)}</b></div>
+                        <button className="btn btn-solid full big" onClick={() => setCartStep('form')}>
+                          {t.to_checkout}
+                        </button>
                       </div>
-                      <div className="line-info">
-                        <b>{title}</b>
-                        <span>{i.size}</span>
-                        <div className="qty">
-                          <button onClick={() => setQty(i.key, -1)} aria-label="−"><Icon name="minus" size={14} /></button>
-                          <b>{i.qty}</b>
-                          <button onClick={() => setQty(i.key, +1)} aria-label="+"><Icon name="plus" size={14} /></button>
-                          <button className="link" onClick={() => removeFromCart(i.key)}>{t.remove}</button>
+                    )}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="step-form" className="cart-step"
+                    initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 24 }}
+                    transition={{ duration: 0.22, ease: 'easeOut' }}
+                  >
+                    <div className="drawer-list">
+                      <div className="ship">
+                        <span className="pay-label">{t.ship_title}</span>
+                        <div className="ship-grid">
+                          <input placeholder={t.f_name} value={customer.name}
+                            onChange={(e) => setCustomer((c) => ({ ...c, name: e.target.value }))} />
+                          <input placeholder={t.f_phone} inputMode="tel" value={customer.phone}
+                            onChange={(e) => setCustomer((c) => ({ ...c, phone: e.target.value }))} />
+                          <input placeholder={t.f_city} value={customer.city}
+                            onChange={(e) => setCustomer((c) => ({ ...c, city: e.target.value }))} />
+                          <input placeholder={t.f_address} value={customer.address}
+                            onChange={(e) => setCustomer((c) => ({ ...c, address: e.target.value }))} />
                         </div>
                       </div>
-                      <span className="line-price">{fmt(price * i.qty)}</span>
-                    </motion.div>
-                  )
-                })}
-              </div>
 
-              <div className="drawer-foot">
-                {cart.length > 0 && (
-                  <div className="ship">
-                    <span className="pay-label">{t.ship_title}</span>
-                    <div className="ship-grid">
-                      <input placeholder={t.f_name} value={customer.name}
-                        onChange={(e) => setCustomer((c) => ({ ...c, name: e.target.value }))} />
-                      <input placeholder={t.f_phone} inputMode="tel" value={customer.phone}
-                        onChange={(e) => setCustomer((c) => ({ ...c, phone: e.target.value }))} />
-                      <input placeholder={t.f_city} value={customer.city}
-                        onChange={(e) => setCustomer((c) => ({ ...c, city: e.target.value }))} />
-                      <input placeholder={t.f_address} value={customer.address}
-                        onChange={(e) => setCustomer((c) => ({ ...c, address: e.target.value }))} />
+                      <div className="pay-methods">
+                        <span className="pay-label">{t.pay_method}</span>
+                        <div className="d-row">
+                          <button
+                            className={`chip big ${payMethod === 'card' ? 'on' : ''}`}
+                            onClick={() => setPayMethod('card')}
+                          >
+                            <Icon name="card" /> {t.pay_card} •••• 4242
+                          </button>
+                          <button
+                            className={`chip big ${payMethod === 'wallet' ? 'on' : ''}`}
+                            onClick={() => setPayMethod('wallet')}
+                          >
+                            <Icon name="wallet" /> {t.pay_wallet}
+                          </button>
+                        </div>
+                        <small className="muted">
+                          {payMethod === 'card' ? t.card_demo : `${t.balance}: ${fmt(wallet.balance)} · ${t.cashback}`}
+                        </small>
+                      </div>
+
+                      <div className="promo">
+                        <input
+                          placeholder={t.promo_ph} value={promoInput}
+                          onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                          onKeyDown={(e) => e.key === 'Enter' && applyPromo()}
+                        />
+                        <button className="btn" onClick={applyPromo}>{t.apply}</button>
+                      </div>
+
+                      <p className="muted">{t.in_cart}: {count}</p>
                     </div>
-                  </div>
-                )}
 
-                <div className="pay-methods">
-                  <span className="pay-label">{t.pay_method}</span>
-                  <div className="d-row">
-                    <button
-                      className={`chip big ${payMethod === 'card' ? 'on' : ''}`}
-                      onClick={() => setPayMethod('card')}
-                    >
-                      <Icon name="card" /> {t.pay_card} •••• 4242
-                    </button>
-                    <button
-                      className={`chip big ${payMethod === 'wallet' ? 'on' : ''}`}
-                      onClick={() => setPayMethod('wallet')}
-                    >
-                      <Icon name="wallet" /> {t.pay_wallet}
-                    </button>
-                  </div>
-                  <small className="muted">
-                    {payMethod === 'card' ? t.card_demo : `${t.balance}: ${fmt(wallet.balance)} · ${t.cashback}`}
-                  </small>
-                </div>
-
-                {cart.length > 0 && (
-                  <div className="promo">
-                    <input
-                      placeholder={t.promo_ph} value={promoInput}
-                      onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                      onKeyDown={(e) => e.key === 'Enter' && applyPromo()}
-                    />
-                    <button className="btn" onClick={applyPromo}>{t.apply}</button>
-                  </div>
+                    <div className="drawer-foot">
+                      {discount > 0 && (
+                        <div className="row muted"><span>{t.discount} · {promo.code}</span><b>−{fmt(discount)}</b></div>
+                      )}
+                      <div className="row"><span>{t.total}</span><b>{fmt(total)}</b></div>
+                      {payMethod === 'wallet' && (
+                        <div className="row muted"><span>{t.cashback}</span><b className="with-icon"><Icon name="coin" size={15} /> +{cashback}</b></div>
+                      )}
+                      <button className="btn btn-solid full big" onClick={checkout} disabled={!cart.length || paying}>
+                        {paying ? t.processing : t.checkout}
+                      </button>
+                    </div>
+                  </motion.div>
                 )}
-
-                {discount > 0 && (
-                  <div className="row muted"><span>{t.discount} · {promo.code}</span><b>−{fmt(discount)}</b></div>
-                )}
-                <div className="row"><span>{t.total}</span><b>{fmt(total)}</b></div>
-                {payMethod === 'wallet' && (
-                  <div className="row muted"><span>{t.cashback}</span><b className="with-icon"><Icon name="coin" size={15} /> +{cashback}</b></div>
-                )}
-                <button className="btn btn-solid full" onClick={checkout} disabled={!cart.length || paying}>
-                  {paying ? t.processing : t.checkout}
-                </button>
-              </div>
+              </AnimatePresence>
 
               <AnimatePresence>
-                {paid && <PaidScreen key="paid" t={t} paid={paid} />}
+                {paid && <PaidScreen key="paid" t={t} paid={paid} onSkip={skipPaid} />}
               </AnimatePresence>
             </motion.aside>
           )}
@@ -793,6 +897,16 @@ export default function App() {
           )}
         </AnimatePresence>
 
+      </div>
+
+      {/* ── копии товара, летящие в корзину ── */}
+      <div className="flyer-layer">
+        {flights.map((f) => (
+          <Flyer
+            key={f.id} flight={f} lang={lang}
+            onDone={() => setFlights((fs) => fs.filter((x) => x.id !== f.id))}
+          />
+        ))}
       </div>
 
       {/* ── тост ── */}

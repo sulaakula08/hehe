@@ -297,13 +297,15 @@ a { color: inherit; text-decoration: none; }
 .empty { padding: 40px 20px; text-align: center; opacity: .55; }
 .drawer-list { flex: 1; overflow-y: auto; padding: 14px 20px; display: flex; flex-direction: column; gap: 14px; }
 
-.line { display: flex; gap: 12px; align-items: center; border-bottom: 2px dashed rgba(0,0,0,.15); padding-bottom: 12px; }
+.line { display: flex; gap: 12px; align-items: flex-start; border-bottom: 2px dashed rgba(0,0,0,.15); padding-bottom: 12px; }
 .line-thumb { width: 64px; height: 64px; border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; display: grid; place-items: center; flex-shrink: 0; }
-.line-info { display: flex; flex-direction: column; gap: 2px; }
+.line-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.line-info b { overflow-wrap: anywhere; }
 .line-info b { font-size: 14px; }
 .line-info span { font-size: 12px; opacity: .6; }
 .link { background: none; border: 0; padding: 0; color: var(--hot); font-size: 12px; cursor: pointer; text-align: left; font-weight: 700; }
-.line-price { margin-left: auto; font-weight: 800; white-space: nowrap; }
+.line-end { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+.line-price { font-weight: 800; white-space: nowrap; }
 
 .drawer-foot { border-top: var(--line); padding: 20px; display: flex; flex-direction: column; gap: 10px; }
 .row { display: flex; justify-content: space-between; font-size: 16px; }
@@ -526,7 +528,6 @@ a { color: inherit; text-decoration: none; }
 }
 .qty button:hover { background: var(--pill-bg); color: var(--pill-fg); }
 .qty > b { min-width: 18px; text-align: center; font-size: 14px; }
-.qty .link { margin-left: 6px; }
 
 .pay-methods { display: flex; flex-direction: column; gap: 8px; padding-bottom: 4px; }
 .pay-label { font-size: 12px; font-weight: 700; opacity: .65; letter-spacing: .04em; }
@@ -724,4 +725,20 @@ a { color: inherit; text-decoration: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .paid, .paid * { animation: none !important; }
+}
+
+/* ── корзина в два шага ── */
+.cart-step { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.drawer-head .x.back { margin-left: 0; margin-right: 10px; }
+.drawer-head h3 { flex: 1; }
+
+/* ── копия товара, летящая в корзину ── */
+.flyer-layer { position: fixed; inset: 0; z-index: 80; pointer-events: none; }
+.flyer {
+  position: fixed; display: grid; place-items: center;
+  will-change: transform, opacity;
+}
+.flyer svg { width: 100%; height: 100%; }
+@media (prefers-reduced-motion: reduce) {
+  .flyer-layer { display: none; }
 }
