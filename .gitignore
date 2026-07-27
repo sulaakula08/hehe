@@ -3,3 +3,7 @@ dist
 .env
 .env.local
 .claude/settings.local.json
+
+# исходники макетов: в public/ они уехали бы в собранный сайт
+_source
+*.zip

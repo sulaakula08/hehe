@@ -270,7 +270,18 @@ export default function App() {
 
   // Каталог, размерная наценка и промокоды редактируются из админки и живут
   // в localStorage. Каталог инициализируется дефолтами из data.js.
-  const [catalog, setCatalog] = useState(() => load('hehe.catalog', PRODUCTS))
+  const [catalog, setCatalog] = useState(() => {
+    const saved = load('hehe.catalog', null)
+    if (!saved) return PRODUCTS
+    // Каталог лежит в localStorage, поэтому новинки из data.js сами не появятся
+    // у того, кто уже заходил. Дописываем их в начало — но только те, которых
+    // витрина ещё не показывала: иначе удалённые из админки товары возвращались
+    // бы при каждой загрузке и кнопка «Удалить» выглядела бы сломанной.
+    const known = new Set(load('hehe.knownIds', []))
+    const have = new Set(saved.map((p) => p.id))
+    const fresh = PRODUCTS.filter((p) => !have.has(p.id) && !known.has(p.id))
+    return [...fresh, ...saved]
+  })
   const [sizeExtra, setSizeExtra] = useState(() => load('hehe.sizeExtra', SIZE_EXTRA))
   const [promos, setPromos] = useState(() => load('hehe.promos', []))
   const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS, ...load('hehe.settings', {}) }))
@@ -306,6 +317,8 @@ export default function App() {
   useEffect(() => save('hehe.orders', orders), [orders])
   useEffect(() => save('hehe.pay', payMethod), [payMethod])
   useEffect(() => save('hehe.catalog', catalog), [catalog])
+  // Запоминаем, какие товары из data.js витрина уже показывала.
+  useEffect(() => save('hehe.knownIds', PRODUCTS.map((p) => p.id)), [])
   useEffect(() => save('hehe.sizeExtra', sizeExtra), [sizeExtra])
   useEffect(() => save('hehe.promos', promos), [promos])
   useEffect(() => save('hehe.customer', customer), [customer])

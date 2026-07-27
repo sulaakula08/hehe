@@ -617,6 +617,7 @@ a { color: inherit; text-decoration: none; }
 .apage-who { font-size: 13px; opacity: .6; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .apage-main { flex: 1; display: grid; grid-template-columns: 210px minmax(0, 1fr); }
+.apage-nav { min-width: 0; }
 .apage-nav { display: flex; flex-direction: column; gap: 4px; padding: 16px 12px; border-right: var(--line); }
 .apage-nav button {
   display: flex; align-items: center; gap: 10px; text-align: left;
@@ -694,15 +695,87 @@ a { color: inherit; text-decoration: none; }
 
 .foot-who { font-size: 13px; opacity: .55; }
 
+/* ── админка на телефоне ──
+   Панель плотная по своей природе: узкие поля, ряды кнопок, таблицы. На
+   360–420 px всё это надо разложить в столбик и увеличить попадаемость
+   пальцем, иначе панелью нельзя пользоваться. */
 @media (max-width: 780px) {
-  .apage-main { grid-template-columns: 1fr; }
-  .apage-nav { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: var(--line); padding: 10px; }
-  .apage-nav button span { display: none; }
-  .apage-nav button { padding: 10px 14px; }
-  .apage-content { padding: 16px 14px 50px; }
+  /* minmax(0,…) — иначе лента вкладок растягивает колонку по своей полной
+     ширине и вся страница едет по горизонтали. */
+  .apage-main { grid-template-columns: minmax(0, 1fr); }
+
+  /* Вкладки — горизонтальная лента с подписями. Раньше подписи прятались
+     и оставались одни иконки: угадывать раздел по картинке невозможно. */
+  .apage-nav {
+    flex-direction: row; gap: 6px; padding: 10px;
+    border-right: 0; border-bottom: var(--line);
+    overflow-x: auto; scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    position: sticky; top: 57px; background: var(--paper); z-index: 4;
+    /* align-self — чтобы лента не растянулась на всю высоту строки грида,
+       align-items — чтобы кнопки не вытянулись вместе с ней. */
+    align-self: start; align-items: center; min-width: 0;
+  }
+  .apage-nav::-webkit-scrollbar { display: none; }
+  .apage-nav button {
+    flex: 0 0 auto; scroll-snap-align: start;
+    padding: 10px 14px; min-height: 42px; font-size: 14px; white-space: nowrap;
+  }
+
+  .apage-top { padding: 10px 14px; gap: 10px; min-height: 57px; }
+  /* Заголовок сжимается и обрезается, иначе группа кнопок справа выпихивает
+     шапку за экран и вся страница едет по горизонтали. */
+  .apage-title { font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .apage-top-right { flex-shrink: 0; }
+  .apage-title .muted { display: none; }
   .apage-who { display: none; }
+  .apage-top-right { gap: 8px; }
+  .apage-top-right .btn { padding: 9px 12px; font-size: 13px; }
+
+  .apage-content { padding: 16px 14px 60px; }
+  .apane { gap: 12px; }
+  .apane h2 { font-size: 21px; }
+
+  /* 16px — чтобы iOS не зумил страницу при фокусе в поле. */
+  .apage input, .apage select { font-size: 16px; min-height: 42px; }
+  .asearch, .acode, .anum, .aprice input, .afield input { width: 100%; }
+  .arow-tools { gap: 8px; }
+  .arow-tools > .btn, .arow-tools > select, .arow-tools > .asearch { flex: 1 1 44%; }
+  .arow-tools > .muted { flex: 1 1 100%; }
+
+  .astats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .astat { padding: 11px; }
+  .astat b { font-size: 17px; }
+
+  /* Строка товара: миниатюра и название сверху, органы управления ниже. */
+  .arow-head { flex-wrap: wrap; gap: 10px; }
+  .athumb { width: 40px; height: 46px; }
+  .arow-main { flex: 1 1 100%; order: 2; }
+  .arow-side { order: 1; margin-left: auto; }
+  .aicon { width: 40px; height: 40px; font-size: 16px; }
+  .arow-inline { gap: 6px; }
+  .arow-inline select { flex: 0 0 auto; width: auto; min-width: 74px; }
+  .arow-inline .aprice { flex: 1 1 120px; }
+  .agrid2 { grid-template-columns: 1fr; }
+  .afield { max-width: none; }
+  .arow-more-foot { gap: 8px; }
+  .arow-more-foot .link { margin-left: 0; }
+
+  .asizes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .aorder-top { gap: 8px; }
   .aorder-sum { margin-left: 0; }
+  .apromo { flex-wrap: wrap; gap: 8px; }
+  .apromo .link { margin-left: 0; }
 }
+
+@media (max-width: 420px) {
+  .apage-title { font-size: 15px; }
+  .apage-top-right .btn { padding: 8px 10px; }
+  .astats { grid-template-columns: 1fr 1fr; }
+  .asizes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .arow-tools > .btn, .arow-tools > select, .arow-tools > .asearch { flex: 1 1 100%; }
+}
+
 @media (max-width: 520px) {
   .hide-sm { display: none; }
 }

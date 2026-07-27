@@ -70,6 +70,16 @@ export const PRODUCTS = [
     kk: { title: 'Бухать!', sub: 'Классика жанра' },
   },
   {
+    // Тот же принт, что у buhat, но в цветной печати — она дороже.
+    id: 'buhatcolor',
+    market: 'ru',
+    base: 10900,
+    color: '#e9e7e2',
+    photos: { white: '/tees/buhatcolor-w.png', black: '/tees/buhatcolor-b.png' },
+    ru: { title: 'Бухать! в цвете', sub: 'Тот же мем, только кислотный' },
+    kk: { title: 'Бухать! түрлі-түсті', sub: 'Сол мем, бірақ түрлі-түсті' },
+  },
+  {
     id: 'buhatsport',
     market: 'ru',
     base: 9900,

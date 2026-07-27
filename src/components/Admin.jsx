@@ -131,7 +131,9 @@ export default function Admin({
         </div>
         <div className="apage-top-right">
           {auth?.email && <span className="apage-who" title={auth.email}>{auth.email}</span>}
-          <button className="btn" onClick={onClose}><Icon name="undo" size={14} /> На витрину</button>
+          <button className="btn" onClick={onClose} title="На витрину" aria-label="На витрину">
+            <Icon name="undo" size={14} /> <span className="hide-sm">На витрину</span>
+          </button>
           <button className="btn btn-ghost" onClick={onLogout}>Выйти</button>
         </div>
       </header>
