@@ -160,7 +160,10 @@ function Card({ p, lang, t, onAdd, isFav, onFav, priceOf }) {
 
   return (
     <motion.article
-      layout
+      /* Без layout: карточка рендерится в двух сетках («что покупают» и каталог),
+         и проекция layout-анимации оставляла на них залипший translateY —
+         первая карточка наезжала на заголовок секции. Появление и фильтрацию
+         анимируют initial/whileInView и AnimatePresence, их достаточно. */
       id={`card-${p.id}`}
       className="card"
       initial={{ opacity: 0, y: 40 }}

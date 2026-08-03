@@ -236,13 +236,15 @@ export default function Tshirt({
   const cased = design?.upper ? rawLines.map((l) => l.toUpperCase()) : rawLines
 
   // В конструкторе кегль задаёт пользователь; в каталоге подгоняем под ширину сами.
-  // 0.86 — средняя ширина глифа Unbounded 800 относительно кегля (замерено в браузере).
+  // 0.71 — средняя ширина заглавного глифа Montserrat 800 относительно кегля.
+  // Было 0.86 под Unbounded; Montserrat уже (0.812 против 0.991 при замере
+  // в браузере), поэтому константу пересчитал пропорционально.
   const catalogLongest = design ? 1 : Math.max(...cased.map((l) => l.length), 1)
-  // 14 — базовый кегль дизайна: при 20 в строку влезало 6 букв Unbounded 800,
+  // 14 — базовый кегль дизайна: при 20 в строку влезало 6 заглавных букв,
   // потому что печатная зона всего ~118 единиц. Крупнее делается слайдером.
   const fontSize = design
     ? 14 * (design.textSize ?? 1)
-    : Math.min(big ? 25 : 23, 108 / (catalogLongest * 0.86))
+    : Math.min(big ? 25 : 23, 108 / (catalogLongest * 0.71))
   const lineH = fontSize * 1.2
 
   const textWidth = design?.textWidth ?? TEXT_WIDTH.start

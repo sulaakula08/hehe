@@ -338,8 +338,8 @@ export const TEMPLATES = [
 
 // Системные шрифты + два уже подключённых: ничего лишнего не качаем.
 export const FONTS = [
-  { id: 'display', label: 'Unbounded', css: "'Unbounded', sans-serif" },
-  { id: 'grotesk', label: 'Grotesk', css: "'Space Grotesk', sans-serif" },
+  { id: 'display', label: 'Montserrat', css: "'Montserrat', sans-serif" },
+  { id: 'grotesk', label: 'Rubik', css: "'Rubik', sans-serif" },
   { id: 'serif', label: 'Serif', css: "Georgia, 'Times New Roman', serif" },
   { id: 'mono', label: 'Mono', css: "'Courier New', monospace" },
   { id: 'narrow', label: 'Impact', css: "Impact, 'Arial Narrow', sans-serif" },

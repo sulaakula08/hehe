@@ -3,7 +3,10 @@
    кислотный жёлтый и розовый на бумажном фоне.
    ────────────────────────────────────────────── */
 
-@import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Space+Grotesk:wght@400;500;700&display=swap');
+/* Unbounded не содержит казахских букв (Ә Ғ Қ Ң Ө Ұ Ү Һ), а Space Grotesk
+   вообще не содержит кириллицы — из-за этого казахский и русский текст
+   подставлялись системным шрифтом и выглядели иначе. Montserrat покрывает латиницу и кириллицу целиком, включая казахскую. */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Rubik:wght@500;700&display=swap');
 
 :root {
   --paper: #f4f1ea;          /* фон страницы */
@@ -57,7 +60,7 @@ html { scroll-behavior: smooth; }
 body {
   background: var(--paper);
   color: var(--ink);
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: 'Montserrat', system-ui, sans-serif;
   overflow-x: hidden;
   /* лёгкая «бумажная» сетка */
   background-image:
@@ -66,7 +69,7 @@ body {
 }
 
 h1, h2, h3, h4, .logo-word, .price, .drop-cell b {
-  font-family: 'Unbounded', system-ui, sans-serif;
+  font-family: 'Montserrat', system-ui, sans-serif;
   letter-spacing: -0.02em;
 }
 
@@ -174,7 +177,7 @@ a { color: inherit; text-decoration: none; }
 
 .stats { display: flex; gap: 34px; margin-top: 46px; flex-wrap: wrap; }
 .stats div { display: flex; flex-direction: column; }
-.stats b { font-family: 'Unbounded'; font-size: 32px; }
+.stats b { font-family: 'Montserrat'; font-size: 32px; }
 .stats span { font-size: 13px; opacity: .65; max-width: 120px; }
 
 .hero-tee { position: relative; z-index: 1; display: grid; place-items: center; }
@@ -187,7 +190,7 @@ a { color: inherit; text-decoration: none; }
 .tee-photo { aspect-ratio: 300 / 340; object-fit: contain; }
 .line-thumb .tee-photo { aspect-ratio: 1; }
 .tee-print {
-  font-family: 'Unbounded', sans-serif; font-weight: 800;
+  font-family: 'Montserrat', sans-serif; font-weight: 800;
   letter-spacing: -.01em; user-select: none;
 }
 
@@ -196,7 +199,7 @@ a { color: inherit; text-decoration: none; }
   border-top: var(--line); border-bottom: var(--line);
   background: var(--band-bg); color: var(--acid); overflow: hidden; padding: 12px 0;
 }
-.ticker-row { display: flex; white-space: nowrap; font-family: 'Unbounded'; font-size: 30px; font-weight: 900; }
+.ticker-row { display: flex; white-space: nowrap; font-family: 'Montserrat'; font-size: 30px; font-weight: 900; }
 .ticker-row span { padding-right: 26px; }
 .ticker-row b { color: var(--hot); }
 
@@ -266,7 +269,7 @@ a { color: inherit; text-decoration: none; }
   border: 3px solid var(--band-fg); border-radius: var(--r); padding: 26px;
   position: relative; background: rgba(255, 255, 255, .04);
 }
-.step-num { font-family: 'Unbounded'; font-size: 13px; color: var(--hot); font-weight: 800; }
+.step-num { font-family: 'Montserrat'; font-size: 13px; color: var(--hot); font-weight: 800; }
 .step-emoji { position: absolute; top: 18px; right: 20px; font-size: 30px; }
 .step h4 { font-size: 22px; margin: 10px 0 8px; }
 .step p { opacity: .7; line-height: 1.5; font-size: 15px; }
@@ -310,7 +313,7 @@ a { color: inherit; text-decoration: none; }
 .drawer-foot { border-top: var(--line); padding: 20px; display: flex; flex-direction: column; gap: 10px; }
 .row { display: flex; justify-content: space-between; font-size: 16px; }
 .row.muted { font-size: 13px; opacity: .6; }
-.row b { font-family: 'Unbounded'; }
+.row b { font-family: 'Montserrat'; }
 
 .modal {
   position: fixed; z-index: 61; top: 50%; left: 50%; translate: -50% -50%;
@@ -325,7 +328,7 @@ a { color: inherit; text-decoration: none; }
   display: flex; flex-direction: column; gap: 18px;
 }
 .wcard-top { display: flex; align-items: center; gap: 10px; font-size: 13px; letter-spacing: .1em; opacity: .8; text-transform: uppercase; }
-.wcard-balance { font-family: 'Unbounded'; font-size: 34px; font-weight: 800; color: var(--acid); }
+.wcard-balance { font-family: 'Montserrat'; font-size: 34px; font-weight: 800; color: var(--acid); }
 .wcard-bottom { display: flex; justify-content: space-between; font-size: 13px; opacity: .75; }
 .topups { display: flex; gap: 8px; }
 .topups .btn { flex: 1; justify-content: center; padding: 11px 8px; font-size: 13px; }
@@ -374,7 +377,7 @@ a { color: inherit; text-decoration: none; }
   flex: 1; border: 2px solid var(--ink); border-radius: 12px; padding: 10px;
   display: flex; flex-direction: column; gap: 2px; background: var(--surface);
 }
-.acc-stats b { font-family: 'Unbounded'; font-size: 15px; }
+.acc-stats b { font-family: 'Montserrat'; font-size: 15px; }
 .acc-stats span { font-size: 11px; opacity: .6; }
 
 .emoji-row { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -587,7 +590,7 @@ a { color: inherit; text-decoration: none; }
   background: var(--paper); border: var(--line); border-radius: 24px;
   padding: 30px; box-shadow: var(--shadow-lg);
 }
-.gate-title { font-family: 'Unbounded'; font-size: 32px; line-height: 1; }
+.gate-title { font-family: 'Montserrat'; font-size: 32px; line-height: 1; }
 .gate-field { display: flex; flex-direction: column; gap: 6px; }
 .gate-field span { font-size: 13px; font-weight: 700; opacity: .7; }
 .gate-field input {
@@ -602,7 +605,7 @@ a { color: inherit; text-decoration: none; }
 .gate-blob.b1 { width: 320px; height: 320px; background: var(--hot); top: 12%; left: 8%; }
 .gate-blob.b2 { width: 280px; height: 280px; background: var(--acid); bottom: 10%; right: 10%; }
 .gate-slogan {
-  position: relative; font-family: 'Unbounded'; font-size: 30px; line-height: 1.25;
+  position: relative; font-family: 'Montserrat'; font-size: 30px; line-height: 1.25;
   font-weight: 800; padding: 40px; max-width: 460px;
 }
 @media (max-width: 860px) {
@@ -616,7 +619,7 @@ a { color: inherit; text-decoration: none; }
   display: flex; align-items: center; gap: 14px; padding: 12px 20px;
   border-bottom: var(--line); position: sticky; top: 0; background: var(--paper); z-index: 5;
 }
-.apage-title { font-family: 'Unbounded'; font-size: 19px; font-weight: 800; }
+.apage-title { font-family: 'Montserrat'; font-size: 19px; font-weight: 800; }
 .apage-top-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .apage-who { font-size: 13px; opacity: .6; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -634,12 +637,12 @@ a { color: inherit; text-decoration: none; }
 
 .apage-content { padding: 22px 24px 60px; overflow-x: hidden; }
 .apane { display: flex; flex-direction: column; gap: 14px; max-width: 900px; }
-.apane h2 { font-family: 'Unbounded'; font-size: 26px; }
-.apane h3 { font-family: 'Unbounded'; font-size: 16px; margin-top: 10px; }
+.apane h2 { font-family: 'Montserrat'; font-size: 26px; }
+.apane h3 { font-family: 'Montserrat'; font-size: 16px; margin-top: 10px; }
 
 .astats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
 .astat { border: 2px solid var(--ink); border-radius: 14px; padding: 14px; background: var(--surface); display: flex; flex-direction: column; gap: 2px; }
-.astat b { font-family: 'Unbounded'; font-size: 20px; }
+.astat b { font-family: 'Montserrat'; font-size: 20px; }
 .astat span { font-size: 12px; opacity: .6; }
 .astat i { font-size: 11px; opacity: .45; font-style: normal; }
 
@@ -688,13 +691,13 @@ a { color: inherit; text-decoration: none; }
 
 .aorder { border: 2px solid var(--ink); border-radius: 14px; padding: 10px 12px; background: var(--surface); }
 .aorder-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.aorder-sum { margin-left: auto; font-family: 'Unbounded'; }
+.aorder-sum { margin-left: auto; font-family: 'Montserrat'; }
 .acust { font-size: 14px; margin: 4px 0; }
 .acust b { font-weight: 700; }
 
 .apromo { display: flex; align-items: center; gap: 12px; border: 2px solid var(--ink); border-radius: 14px; padding: 10px 12px; background: var(--surface); }
 .apromo.off { opacity: .5; }
-.apromo b:first-child { font-family: 'Unbounded'; letter-spacing: .08em; }
+.apromo b:first-child { font-family: 'Montserrat'; letter-spacing: .08em; }
 .apromo .link { margin-left: auto; }
 
 .foot-who { font-size: 13px; opacity: .55; }
@@ -793,8 +796,8 @@ a { color: inherit; text-decoration: none; }
   gap: 8px; padding: 30px; text-align: center;
 }
 .paid-mark { width: 96px; height: 96px; color: var(--mint); margin-bottom: 6px; }
-.paid b { font-family: 'Unbounded'; font-size: 24px; }
-.paid-sum { font-family: 'Unbounded'; font-size: 34px; font-weight: 800; color: var(--hot); }
+.paid b { font-family: 'Montserrat'; font-size: 24px; }
+.paid-sum { font-family: 'Montserrat'; font-size: 34px; font-weight: 800; color: var(--hot); }
 .paid-coins {
   display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
   border: 2px solid var(--ink); border-radius: 999px; padding: 8px 14px;
@@ -847,7 +850,7 @@ a { color: inherit; text-decoration: none; }
   background: var(--surface); border: 2px solid var(--ink); border-radius: 18px;
   padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;
 }
-.statcard b { font-family: 'Unbounded'; font-size: 26px; font-weight: 800; line-height: 1; }
+.statcard b { font-family: 'Montserrat'; font-size: 26px; font-weight: 800; line-height: 1; }
 .statcard span { font-size: 12.5px; opacity: .6; line-height: 1.35; }
 
 /* ── мозаика: крупная плитка слева, мелкие справа ── */
@@ -865,15 +868,19 @@ a { color: inherit; text-decoration: none; }
 }
 .mtile:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
 .mtile.big { grid-row: span 2; }
-.mtile-art { position: absolute; inset: 0; display: grid; place-items: center; padding: 14px 14px 62px; }
+/* Картинка была position:absolute;inset:0 и накрывала подпись — текст читался
+   поверх футболки. Теперь плитка обычный поток: картинка сверху, подпись под ней. */
+.mtile-art {
+  flex: 1; min-height: 0; display: grid; place-items: center;
+  padding: 14px; overflow: hidden;
+}
 .mtile-art.center { color: var(--hot); }
-.mtile-art svg { max-height: 100%; }
+.mtile-art svg { max-width: 100%; max-height: 100%; }
 .mtile-cap {
-  position: relative; z-index: 1; padding: 12px 15px;
-  background: linear-gradient(to top, var(--paper) 62%, transparent);
+  flex-shrink: 0; padding: 12px 15px; border-top: 2px dashed rgba(128,128,128,.3);
   display: flex; flex-direction: column; gap: 2px;
 }
-.mtile-cap b { font-family: 'Unbounded'; font-size: 15px; }
+.mtile-cap b { font-family: 'Montserrat'; font-size: 15px; }
 .mtile-cap span { font-size: 12px; opacity: .6; }
 .mtile.big .mtile-cap b { font-size: 20px; }
 
@@ -888,7 +895,7 @@ a { color: inherit; text-decoration: none; }
   width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
   background: var(--acid); color: var(--on-acid); margin-bottom: 6px;
 }
-.tile b { font-family: 'Unbounded'; font-size: 16px; }
+.tile b { font-family: 'Montserrat'; font-size: 16px; }
 .tile-d { font-size: 13px; opacity: .6; }
 .tile-meta {
   margin-top: 8px; font-size: 11px; font-weight: 800; letter-spacing: .09em;
@@ -906,7 +913,7 @@ a { color: inherit; text-decoration: none; }
   border-radius: 999px; padding: 5px 12px;
   font-size: 11px; font-weight: 800; letter-spacing: .09em;
 }
-.collcard b { font-family: 'Unbounded'; font-size: 20px; line-height: 1.15; }
+.collcard b { font-family: 'Montserrat'; font-size: 20px; line-height: 1.15; }
 .collcard p { font-size: 14px; opacity: .68; line-height: 1.5; flex: 1; }
 .link.big { font-size: 14px; }
 
@@ -929,7 +936,7 @@ a { color: inherit; text-decoration: none; }
   background: var(--surface); border: var(--line); border-radius: 22px;
   padding: 22px; display: flex; flex-direction: column; gap: 8px;
 }
-.lifecard b { font-family: 'Unbounded'; font-size: 18px; }
+.lifecard b { font-family: 'Montserrat'; font-size: 18px; }
 .lifecard p { font-size: 14px; opacity: .68; line-height: 1.5; flex: 1; }
 
 /* ── о проекте ── */
@@ -943,7 +950,7 @@ a { color: inherit; text-decoration: none; }
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .aboutstats div { display: flex; flex-direction: column; gap: 3px; }
-.aboutstats b { font-family: 'Unbounded'; font-size: 30px; font-weight: 800; line-height: 1; }
+.aboutstats b { font-family: 'Montserrat'; font-size: 30px; font-weight: 800; line-height: 1; }
 .aboutstats span { font-size: 12.5px; opacity: .6; }
 
 .filters-count {
