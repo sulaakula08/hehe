@@ -7,7 +7,7 @@ import Designer from './components/Designer.jsx'
 import Admin from './components/Admin.jsx'
 import Icon from './components/Icon.jsx'
 import Gate from './components/Gate.jsx'
-import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, T, fmt, DEFAULT_SETTINGS } from './data.js'
+import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, T, fmt, DEFAULT_SETTINGS, COLLECTIONS } from './data.js'
 
 const load = (k, d) => {
   try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch { return d }
@@ -489,7 +489,21 @@ export default function App() {
   const onFav = (p) => setFavorites((f) => (f.includes(p.id) ? f.filter((x) => x !== p.id) : [...f, p.id]))
 
   const visible = catalog.filter((p) => !p.hidden)
-  const shown = filter === 'all' ? visible : visible.filter((p) => p.market === filter)
+  // Фильтр — 'all', код рынка ('ru'/'kk') или 'coll:<id>' для готовой подборки.
+  const inCollection = (c) => visible.filter((pr, i) => c.match(pr, i))
+  const activeColl = filter.startsWith('coll:')
+    ? COLLECTIONS.find((c) => c.id === filter.slice(5))
+    : null
+  const shown = filter === 'all' ? visible
+    : activeColl ? inCollection(activeColl)
+    : visible.filter((p) => p.market === filter)
+
+  /** Ставит фильтр и уводит к каталогу — как «Открыть подборку» у образца. */
+  const gotoCatalog = (f = 'all') => {
+    setFilter(f)
+    document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+  const heroTee = findProduct('shashlyk') || visible[0] || PRODUCTS[0]
 
   const showAdmin = () => {
     window.location.hash = '#admin'
@@ -615,8 +629,8 @@ export default function App() {
         <div className="hero-blob b1" />
         <div className="hero-blob b2" />
         <div className="hero-inner">
-          <motion.span className="badge" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-            {t.tagline}
+          <motion.span className="eyebrow" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+            {t.shop_eyebrow}
           </motion.span>
 
           <h1 className="hero-title">
@@ -633,22 +647,14 @@ export default function App() {
             ))}
           </h1>
 
-          <motion.p className="hero-sub" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
-            {t.hero_sub}
+          <motion.p className="hero-lead" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+            {t.hero_lead}
           </motion.p>
 
           <motion.div className="hero-cta" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
-            <a href="#catalog" className="btn btn-solid big">{t.cta_shop}</a>
-            <button className="btn btn-hot big" onClick={() => setOpenDesigner(true)}>
-              <Icon name="brush" /> {t.designer_open}
-            </button>
+            <button className="btn btn-solid big" onClick={() => gotoCatalog('all')}>{t.cta_shop}</button>
+            <a href="#collections" className="btn big">{t.cta_collections}</a>
           </motion.div>
-
-          <div className="stats">
-            {[[PRODUCTS.length, t.stat_1], ['∞', t.stat_2], ['1–3', t.stat_3]].map(([n, l]) => (
-              <div key={l}><b>{n}</b><span>{l}</span></div>
-            ))}
-          </div>
         </div>
 
         <motion.div
@@ -658,20 +664,147 @@ export default function App() {
           transition={{ delay: 0.3, type: 'spring', stiffness: 70, damping: 14 }}
         >
           <motion.div animate={{ y: [0, -14, 0] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}>
-            <Tshirt product={{ ...PRODUCTS[5], photo: PRODUCTS[5].photos.black }} lang={lang} hovered big />
+            <Tshirt product={{ ...heroTee, photo: heroTee.photos.black }} lang={lang} hovered big />
           </motion.div>
         </motion.div>
       </section>
 
+      {/* ── полоса цифр ── */}
+      <div className="wrap">
+        <div className="statstrip">
+          {[
+            [visible.length, t.st_products], [SIZES.length, t.st_sizes], [2, t.st_colors],
+            [settings.cashback, t.st_cashback], [2, t.st_langs], ['∞', t.st_custom],
+          ].map(([n, l]) => (
+            <div key={l} className="statcard"><b>{n}</b><span>{l}</span></div>
+          ))}
+        </div>
+      </div>
+
       <Ticker text="funymems.cc" />
+
+      {/* ── мозаика: крупная плитка + мелкие ── */}
+      <div className="wrap">
+        <div className="mosaic">
+          <button className="mtile big" onClick={() => gotoCatalog('coll:fresh')}>
+            <div className="mtile-art">
+              <Tshirt product={{ ...heroTee, photo: heroTee.photos.black }} lang={lang} big />
+            </div>
+            <div className="mtile-cap">
+              <b>{T[lang].collections_title}</b>
+              <span>{t.collections_sub}</span>
+            </div>
+          </button>
+          {[['ru', t.sec_ru, t.sec_ru_d], ['kk', t.sec_kk, t.sec_kk_d]].map(([m, ti, de]) => {
+            const pr = visible.find((x) => x.market === m) || visible[0]
+            return (
+              <button key={m} className="mtile" onClick={() => gotoCatalog(m)}>
+                <div className="mtile-art">
+                  {pr && <Tshirt product={{ ...pr, photo: pr.photos.white }} lang={lang} />}
+                </div>
+                <div className="mtile-cap"><b>{ti}</b><span>{de}</span></div>
+              </button>
+            )
+          })}
+          <button className="mtile" onClick={() => setOpenDesigner(true)}>
+            <div className="mtile-art center"><Icon name="brush" size={54} /></div>
+            <div className="mtile-cap"><b>{t.sec_custom}</b><span>{t.sec_custom_d}</span></div>
+          </button>
+        </div>
+      </div>
+
+      {/* ── разделы магазина ── */}
+      <section id="sections" className="section wrap">
+        <div className="section-head">
+          <div><h2>{t.sections_title}</h2><p>{t.sections_sub}</p></div>
+        </div>
+        <div className="tilegrid">
+          {[
+            ['shirt', t.sec_all, t.sec_all_d, `${visible.length} ${t.goods}`, () => gotoCatalog('all')],
+            ['shirt', t.sec_ru, t.sec_ru_d, `${visible.filter((p) => p.market === 'ru').length} ${t.goods}`, () => gotoCatalog('ru')],
+            ['shirt', t.sec_kk, t.sec_kk_d, `${visible.filter((p) => p.market === 'kk').length} ${t.goods}`, () => gotoCatalog('kk')],
+            ['brush', t.sec_custom, t.sec_custom_d, '∞', () => setOpenDesigner(true)],
+            ['heart', t.sec_fav, t.sec_fav_d, `${favorites.length} ${t.goods}`, () => setOpenAccount(true)],
+            ['wallet', t.sec_wallet, t.sec_wallet_d, fmt(wallet.balance), () => setOpenAccount(true)],
+          ].map(([ic, ti, de, meta, go]) => (
+            <motion.button
+              key={ti} className="tile" onClick={go}
+              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }} whileHover={{ y: -5 }}
+            >
+              <span className="tile-ic"><Icon name={ic} size={20} /></span>
+              <b>{ti}</b>
+              <span className="tile-d">{de}</span>
+              <span className="tile-meta">{meta}</span>
+            </motion.button>
+          ))}
+        </div>
+      </section>
+
+      {/* ── готовые подборки ── */}
+      <section id="collections" className="section wrap">
+        <div className="section-head">
+          <div><h2>{t.collections_title}</h2><p>{t.collections_sub}</p></div>
+        </div>
+        <div className="collgrid">
+          {COLLECTIONS.map((c) => {
+            const n = inCollection(c).length
+            return (
+              <motion.div
+                key={c.id} className="collcard"
+                initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+              >
+                <span className="coll-count">{n} {t.goods}</span>
+                <b>{c[lang].title}</b>
+                <p>{c[lang].desc}</p>
+                <button className="link big" onClick={() => gotoCatalog(`coll:${c.id}`)}>
+                  {t.collection_open} →
+                </button>
+              </motion.div>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* ── преимущества ── */}
+      <div className="wrap">
+        <div className="benefits">
+          {[['cart', t.ben_1_t, t.ben_1_d], ['coin', t.ben_2_t, t.ben_2_d],
+            ['brush', t.ben_3_t, t.ben_3_d], ['hand', t.ben_4_t, t.ben_4_d]].map(([ic, ti, de]) => (
+            <div key={ti} className="benefit">
+              <Icon name={ic} size={19} />
+              <div><b>{ti}</b><span>{de}</span></div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── что покупают прямо сейчас ── */}
+      <section className="section wrap">
+        <div className="section-head">
+          <div><h2>{t.popular_title}</h2><p>{t.popular_sub}</p></div>
+          <button className="link big" onClick={() => gotoCatalog('all')}>{t.see_all} →</button>
+        </div>
+        <div className="grid">
+          {visible.slice(0, 4).map((pr) => (
+            <Card
+              key={`pop-${pr.id}`} p={pr} lang={lang} t={t}
+              onAdd={addToCart} priceOf={priceOf}
+              isFav={favorites.includes(pr.id)} onFav={onFav}
+            />
+          ))}
+        </div>
+      </section>
+
       <Countdown t={t} />
 
       {/* ── каталог ── */}
-      <section id="catalog" className="section">
+      <section id="catalog" className="section wrap">
         <div className="section-head catalog-head">
           <div>
             <h2>{t.catalog_title}</h2>
-            <p>{t.catalog_sub}</p>
+            <p>{activeColl ? activeColl[lang].desc : t.catalog_sub}</p>
           </div>
           <button className="btn btn-hot big" onClick={() => setOpenDesigner(true)}>
             <Icon name="brush" /> {t.designer_open}
@@ -692,19 +825,50 @@ export default function App() {
               {r[lang]}
             </button>
           ))}
+          {/* Активная подборка показывается отдельным чипом со сбросом. */}
+          {activeColl && (
+            <button className="chip big on" onClick={() => setFilter('all')}>
+              {activeColl[lang].title} <Icon name="close" size={12} />
+            </button>
+          )}
+          <span className="filters-count">{shown.length} {t.goods}</span>
         </div>
 
         <motion.div layout className="grid">
           <AnimatePresence>
-            {shown.map((p) => (
+            {shown.map((pr) => (
               <Card
-                key={p.id} p={p} lang={lang} t={t}
+                key={pr.id} p={pr} lang={lang} t={t}
                 onAdd={addToCart} priceOf={priceOf}
-                isFav={favorites.includes(p.id)} onFav={onFav}
+                isFav={favorites.includes(pr.id)} onFav={onFav}
               />
             ))}
           </AnimatePresence>
         </motion.div>
+        {!shown.length && <p className="empty">{t.cart_empty}</p>}
+      </section>
+
+      {/* ── не только футболки ── */}
+      <section className="section wrap">
+        <div className="section-head">
+          <div><h2>{t.life_title}</h2><p>{t.life_sub}</p></div>
+        </div>
+        <div className="lifegrid">
+          {[[t.life_1_t, t.life_1_d, t.life_1_c, 'brush', () => setOpenDesigner(true)],
+            [t.life_2_t, t.life_2_d, t.life_2_c, 'wallet', () => setOpenAccount(true)],
+            [t.life_3_t, t.life_3_d, t.life_3_c, 'heart', () => setOpenAccount(true)]].map(([ti, de, cta, ic, go]) => (
+            <motion.div
+              key={ti} className="lifecard"
+              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+            >
+              <span className="tile-ic"><Icon name={ic} size={20} /></span>
+              <b>{ti}</b>
+              <p>{de}</p>
+              <button className="link big" onClick={go}>{cta} →</button>
+            </motion.div>
+          ))}
+        </div>
       </section>
 
       {/* ── как это работает ── */}
@@ -723,6 +887,23 @@ export default function App() {
               <p>{de}</p>
             </motion.div>
           ))}
+        </div>
+      </section>
+
+      {/* ── о проекте ── */}
+      <section className="section wrap">
+        <div className="about">
+          <span className="eyebrow">{t.about_eyebrow}</span>
+          <p className="about-text">{t.about_text}</p>
+          <div className="hero-cta">
+            <button className="btn btn-solid big" onClick={() => gotoCatalog('all')}>{t.cta_shop}</button>
+            <button className="btn big" onClick={() => setOpenDesigner(true)}>{t.designer_open}</button>
+          </div>
+          <div className="aboutstats">
+            {[[visible.length, t.ab_1], [2, t.ab_2], [2, t.ab_3], ['∞', t.ab_4]].map(([n, l]) => (
+              <div key={l}><b>{n}</b><span>{l}</span></div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -921,6 +1102,19 @@ export default function App() {
           />
         ))}
       </div>
+
+      {/* ── нижняя панель (только телефон), как у образца ── */}
+      <nav className="bottombar">
+        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <Icon name="outline" size={19} /><span>{t.nav_home}</span>
+        </button>
+        <button onClick={() => gotoCatalog('all')}>
+          <Icon name="shirt" size={19} /><span>{t.nav_shop}</span>
+        </button>
+        <button className={count ? 'hot' : ''} onClick={() => setOpenCart(true)}>
+          <Icon name="cart" size={19} /><span>{t.cart}{count ? ` · ${count}` : ''}</span>
+        </button>
+      </nav>
 
       {/* ── тост ── */}
       <AnimatePresence>

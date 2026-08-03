@@ -494,6 +494,10 @@ a { color: inherit; text-decoration: none; }
 }
 
 @media (max-width: 900px) {
+  /* Между 520 и 900 px шапка не переносилась: логотип плюс правая группа
+     кнопок не влезали в строку и толкали страницу по горизонтали. */
+  .nav { flex-wrap: wrap; row-gap: 8px; }
+  .nav-right { flex-wrap: wrap; justify-content: flex-end; }
   .hero { grid-template-columns: 1fr; }
   .hero-tee { order: -1; max-width: 320px; margin: 0 auto; }
   .nav-links { display: none; }
@@ -814,4 +818,183 @@ a { color: inherit; text-decoration: none; }
 .flyer svg { width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) {
   .flyer-layer { display: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Структура витрины по образцу posters-art: широкая обёртка,
+   карточные секции, плитки разделов, подборки, полоса цифр,
+   нижняя панель на телефоне.
+   ══════════════════════════════════════════════════════════════ */
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+.section.wrap { padding-left: 20px; padding-right: 20px; }
+
+/* Маленькая капслок-плашка над заголовками */
+.eyebrow {
+  display: inline-block; align-self: flex-start;
+  background: rgba(255, 46, 136, .14); color: var(--hot);
+  border: 2px solid var(--hot); border-radius: 999px; padding: 6px 15px;
+  font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+}
+.hero-lead { max-width: 620px; font-size: 17px; line-height: 1.55; opacity: .72; }
+
+/* ── полоса цифр под героем ── */
+.statstrip {
+  display: grid; gap: 12px; margin: 6px 0 34px;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+}
+.statcard {
+  background: var(--surface); border: 2px solid var(--ink); border-radius: 18px;
+  padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;
+}
+.statcard b { font-family: 'Unbounded'; font-size: 26px; font-weight: 800; line-height: 1; }
+.statcard span { font-size: 12.5px; opacity: .6; line-height: 1.35; }
+
+/* ── мозаика: крупная плитка слева, мелкие справа ── */
+.mosaic {
+  display: grid; gap: 14px; margin: 34px 0;
+  grid-template-columns: 1.7fr 1fr 1fr;
+  grid-template-rows: repeat(2, minmax(150px, auto));
+}
+.mtile {
+  position: relative; overflow: hidden; cursor: pointer; text-align: left;
+  border: var(--line); border-radius: 22px; padding: 0;
+  background: var(--surface); color: var(--ink);
+  display: flex; flex-direction: column; justify-content: flex-end;
+  transition: transform .2s, box-shadow .2s;
+}
+.mtile:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.mtile.big { grid-row: span 2; }
+.mtile-art { position: absolute; inset: 0; display: grid; place-items: center; padding: 14px 14px 62px; }
+.mtile-art.center { color: var(--hot); }
+.mtile-art svg { max-height: 100%; }
+.mtile-cap {
+  position: relative; z-index: 1; padding: 12px 15px;
+  background: linear-gradient(to top, var(--paper) 62%, transparent);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.mtile-cap b { font-family: 'Unbounded'; font-size: 15px; }
+.mtile-cap span { font-size: 12px; opacity: .6; }
+.mtile.big .mtile-cap b { font-size: 20px; }
+
+/* ── плитки разделов ── */
+.tilegrid { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tile {
+  text-align: left; cursor: pointer; font-family: inherit; color: var(--ink);
+  background: var(--surface); border: 2px solid var(--ink); border-radius: 18px;
+  padding: 18px; display: flex; flex-direction: column; gap: 5px;
+}
+.tile-ic {
+  width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+  background: var(--acid); color: var(--on-acid); margin-bottom: 6px;
+}
+.tile b { font-family: 'Unbounded'; font-size: 16px; }
+.tile-d { font-size: 13px; opacity: .6; }
+.tile-meta {
+  margin-top: 8px; font-size: 11px; font-weight: 800; letter-spacing: .09em;
+  text-transform: uppercase; opacity: .5;
+}
+
+/* ── готовые подборки ── */
+.collgrid { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.collcard {
+  background: var(--surface); border: var(--line); border-radius: 22px;
+  padding: 22px; display: flex; flex-direction: column; gap: 8px;
+}
+.coll-count {
+  align-self: flex-start; background: var(--pill-bg); color: var(--pill-fg);
+  border-radius: 999px; padding: 5px 12px;
+  font-size: 11px; font-weight: 800; letter-spacing: .09em;
+}
+.collcard b { font-family: 'Unbounded'; font-size: 20px; line-height: 1.15; }
+.collcard p { font-size: 14px; opacity: .68; line-height: 1.5; flex: 1; }
+.link.big { font-size: 14px; }
+
+/* ── полоса преимуществ ── */
+.benefits {
+  display: grid; gap: 12px; margin: 34px 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.benefit {
+  display: flex; gap: 11px; align-items: flex-start;
+  background: var(--surface); border: 2px solid var(--ink); border-radius: 16px; padding: 15px;
+}
+.benefit > svg { flex-shrink: 0; color: var(--hot); margin-top: 2px; }
+.benefit b { display: block; font-size: 14px; }
+.benefit span { font-size: 12.5px; opacity: .6; line-height: 1.4; }
+
+/* ── «не только футболки» ── */
+.lifegrid { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.lifecard {
+  background: var(--surface); border: var(--line); border-radius: 22px;
+  padding: 22px; display: flex; flex-direction: column; gap: 8px;
+}
+.lifecard b { font-family: 'Unbounded'; font-size: 18px; }
+.lifecard p { font-size: 14px; opacity: .68; line-height: 1.5; flex: 1; }
+
+/* ── о проекте ── */
+.about {
+  background: var(--surface); border: var(--line); border-radius: 26px;
+  padding: 34px; display: flex; flex-direction: column; gap: 16px; align-items: flex-start;
+}
+.about-text { max-width: 720px; font-size: 17px; line-height: 1.6; }
+.aboutstats {
+  display: grid; gap: 12px; width: 100%; margin-top: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.aboutstats div { display: flex; flex-direction: column; gap: 3px; }
+.aboutstats b { font-family: 'Unbounded'; font-size: 30px; font-weight: 800; line-height: 1; }
+.aboutstats span { font-size: 12.5px; opacity: .6; }
+
+.filters-count {
+  margin-left: auto; font-size: 11.5px; font-weight: 800;
+  letter-spacing: .09em; text-transform: uppercase; opacity: .45;
+}
+
+/* ── нижняя панель: только на телефоне ── */
+.bottombar { display: none; }
+
+@media (max-width: 960px) {
+  .mosaic { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
+  .mtile.big { grid-column: span 2; grid-row: auto; min-height: 260px; }
+}
+@media (max-width: 620px) {
+  .wrap, .section.wrap { padding-left: 14px; padding-right: 14px; }
+  .statstrip { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 24px; }
+  .statcard { padding: 13px 14px; }
+  .statcard b { font-size: 21px; }
+  .mosaic { grid-template-columns: 1fr; gap: 10px; margin: 24px 0; }
+  .mtile.big { grid-column: auto; min-height: 300px; }
+  .mtile { min-height: 190px; }
+  .tilegrid, .collgrid, .lifegrid, .benefits { grid-template-columns: 1fr; }
+  .about { padding: 22px; border-radius: 20px; }
+  .about-text { font-size: 15.5px; }
+  .aboutstats { grid-template-columns: 1fr 1fr; }
+  .aboutstats b { font-size: 24px; }
+  .hero-lead { font-size: 15.5px; }
+  .filters-count { margin-left: 0; width: 100%; }
+
+  /* Панель снизу дублирует главное действие — как в образце. */
+  .bottombar {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 55;
+    background: var(--paper); border-top: var(--line);
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+  }
+  .bottombar button {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    border: 0; background: transparent; color: var(--ink); cursor: pointer;
+    font-family: inherit; font-size: 11px; font-weight: 700;
+    padding: 8px 4px; border-radius: 12px;
+  }
+  .bottombar button.hot { background: var(--pill-bg); color: var(--pill-fg); }
+  /* Чтобы панель не накрывала подвал и последнюю секцию. */
+  .footer { padding-bottom: 78px; }
+}
+
+/* Промежуточная ширина: три колонки уже не влезают. */
+@media (min-width: 621px) and (max-width: 1000px) {
+  .tilegrid, .collgrid, .lifegrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .benefits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .statstrip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
