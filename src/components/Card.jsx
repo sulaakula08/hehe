@@ -9,6 +9,9 @@ export default function Card({ p, lang, t, onAdd, isFav, onFav, priceOf }) {
   const [hover, setHover] = useState(false)
   const [size, setSize] = useState('M')
   const [color, setColor] = useState('black')
+  // На телефоне карточки маленькие: по тапу футболка разворачивается на всю
+  // ширину сетки, повторный тап возвращает как было.
+  const [zoom, setZoom] = useState(false)
   const mediaRef = useRef(null)
   const m = MARKETS[p.market]
   const shown = { ...p, photo: p.photos[color] }
@@ -23,7 +26,7 @@ export default function Card({ p, lang, t, onAdd, isFav, onFav, priceOf }) {
          первая карточка наезжала на заголовок секции. Появление и фильтрацию
          анимируют initial/whileInView и AnimatePresence, их достаточно. */
       id={`card-${p.id}`}
-      className="card"
+      className={`card ${zoom ? 'is-zoom' : ''}`}
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-60px' }}
@@ -46,9 +49,21 @@ export default function Card({ p, lang, t, onAdd, isFav, onFav, priceOf }) {
         <Icon name="heart" size={17} style={{ fill: isFav ? 'currentColor' : 'none' }} />
       </motion.button>
 
-      <div ref={mediaRef} className="card-media" style={{ background: `radial-gradient(circle at 50% 40%, ${p.color}22, transparent 70%)` }}>
-        <Tshirt product={shown} lang={lang} hovered={hover} />
-      </div>
+      <motion.div
+        ref={mediaRef}
+        className="card-media"
+        role="button" tabIndex={0}
+        aria-label={zoom ? t.zoom_out : t.zoom_in}
+        title={zoom ? t.zoom_out : t.zoom_in}
+        onClick={() => setZoom((z) => !z)}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setZoom((z) => !z))}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 22 }}
+        style={{ background: `radial-gradient(circle at 50% 40%, ${p.color}22, transparent 70%)` }}
+      >
+        <Tshirt product={shown} lang={lang} hovered={hover || zoom} big={zoom} />
+        <span className="zoom-hint"><Icon name={zoom ? 'minus' : 'plus'} size={13} /></span>
+      </motion.div>
 
       <h3>{p[lang].title}</h3>
       <p className="card-sub">{p[lang].sub}</p>
