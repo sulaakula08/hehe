@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import Icon from './Icon.jsx'
 import Logo from './Logo.jsx'
-import { PRODUCTS, MARKETS, SIZES, DEFAULT_SETTINGS, fmt, asset } from '../data.js'
+import { PRODUCTS, MARKETS, SIZES, DEFAULT_SETTINGS, ADMIN_PASS, fmt, asset } from '../data.js'
 
 const ALL_SLUGS = PRODUCTS.map((p) => p.id)
 
@@ -26,10 +26,14 @@ function Stat({ value, label, hint }) {
 }
 
 export default function Admin({
-  onClose, onToast, auth, onLogout,
+  onClose, onToast,
   catalog, setCatalog, sizeExtra, setSizeExtra, promos, setPromos,
   orders, setOrders, settings, setSettings, priceOf,
 }) {
+  // Панель закрыта своим паролем. Защита демонстрационная: пароль лежит в коде
+  // и виден в бандле, но случайный посетитель витрины внутрь не попадёт.
+  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('hehe.admin') === '1')
+  const [pass, setPass] = useState('')
   const [tab, setTab] = useState('overview')
   const [addSlug, setAddSlug] = useState(ALL_SLUGS[0])
   const [q, setQ] = useState('')
@@ -121,6 +125,39 @@ export default function Admin({
     onToast('Каталог и цены сброшены')
   }
 
+  if (!unlocked) {
+    const submit = (e) => {
+      e.preventDefault()
+      if (pass === ADMIN_PASS) {
+        sessionStorage.setItem('hehe.admin', '1')
+        setUnlocked(true)
+      } else onToast('Неверный пароль')
+    }
+    return (
+      <div className="apage">
+        <header className="apage-top">
+          <Logo size={30} />
+          <div className="apage-title">Админ-панель <span className="muted">· demo</span></div>
+          <div className="apage-top-right">
+            <button className="btn" onClick={onClose} title="На витрину" aria-label="На витрину">
+              <Icon name="undo" size={14} /> <span className="hide-sm">На витрину</span>
+            </button>
+          </div>
+        </header>
+        <form className="alock" onSubmit={submit}>
+          <span className="tile-ic"><Icon name="settings" size={20} /></span>
+          <h2>Вход в панель</h2>
+          <p className="muted">Демо-доступ: пароль зашит в код, настоящей защиты здесь нет.</p>
+          <input
+            type="password" placeholder="Пароль" autoFocus
+            value={pass} onChange={(e) => setPass(e.target.value)}
+          />
+          <button className="btn btn-solid full big">Войти</button>
+        </form>
+      </div>
+    )
+  }
+
   return (
     <div className="apage">
       {/* ── верхняя панель ── */}
@@ -130,11 +167,16 @@ export default function Admin({
           Админ-панель <span className="muted">· demo</span>
         </div>
         <div className="apage-top-right">
-          {auth?.email && <span className="apage-who" title={auth.email}>{auth.email}</span>}
+
           <button className="btn" onClick={onClose} title="На витрину" aria-label="На витрину">
             <Icon name="undo" size={14} /> <span className="hide-sm">На витрину</span>
           </button>
-          <button className="btn btn-ghost" onClick={onLogout}>Выйти</button>
+          <button
+            className="btn btn-ghost"
+            onClick={() => { sessionStorage.removeItem('hehe.admin'); setUnlocked(false) }}
+          >
+            Запереть
+          </button>
         </div>
       </header>
 
@@ -228,6 +270,15 @@ export default function Admin({
                           </label>
                           <button className={`chip ${p.hidden ? '' : 'on'}`} onClick={() => patch(p.id, { hidden: !p.hidden })}>
                             {p.hidden ? 'Скрыт' : 'Виден'}
+                          </button>
+                          {/* Новинку можно снять и поставить руками — подборка
+                              «Новинки» и плашка на карточке смотрят на этот флаг. */}
+                          <button
+                            className={`chip ${p.fresh ? 'on' : ''}`}
+                            onClick={() => patch(p.id, { fresh: !p.fresh })}
+                            title="Показывать как новинку"
+                          >
+                            Новинка
                           </button>
                         </div>
                       </div>

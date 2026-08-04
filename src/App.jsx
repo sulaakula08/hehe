@@ -6,7 +6,6 @@ import Account from './components/Account.jsx'
 import Designer from './components/Designer.jsx'
 import Admin from './components/Admin.jsx'
 import Icon from './components/Icon.jsx'
-import Gate from './components/Gate.jsx'
 import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, T, fmt, DEFAULT_SETTINGS, COLLECTIONS } from './data.js'
 
 const load = (k, d) => {
@@ -175,6 +174,7 @@ function Card({ p, lang, t, onAdd, isFav, onFav, priceOf }) {
       whileHover={{ y: -8 }}
     >
       <span className="rarity" style={{ background: m.color }}>{m[lang]}</span>
+      {p.fresh && <span className="rarity is-new">{t.badge_new}</span>}
 
       <motion.button
         className={`fav ${isFav ? 'on' : ''}`}
@@ -282,14 +282,19 @@ export default function App() {
     // бы при каждой загрузке и кнопка «Удалить» выглядела бы сломанной.
     const known = new Set(load('hehe.knownIds', []))
     const have = new Set(saved.map((p) => p.id))
-    const fresh = PRODUCTS.filter((p) => !have.has(p.id) && !known.has(p.id))
-    return [...fresh, ...saved]
+    const added = PRODUCTS.filter((p) => !have.has(p.id) && !known.has(p.id))
+    // Флаг fresh появился позже сохранённого каталога, поэтому у старых записей
+    // его нет и подборка «Новинки» оказалась бы пустой. Подставляем значение из
+    // data.js только когда флага нет вовсе: явное true/false из админки не трогаем.
+    const byId = new Map(PRODUCTS.map((p) => [p.id, p]))
+    const patched = saved.map((p) => (
+      p.fresh === undefined ? { ...p, fresh: !!byId.get(p.id)?.fresh } : p
+    ))
+    return [...added, ...patched]
   })
   const [sizeExtra, setSizeExtra] = useState(() => load('hehe.sizeExtra', SIZE_EXTRA))
   const [promos, setPromos] = useState(() => load('hehe.promos', []))
   const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS, ...load('hehe.settings', {}) }))
-  // Вход демонстрационный: храним только почту и признак админа, пароля тут нет.
-  const [auth, setAuth] = useState(() => load('hehe.auth', null))
   const [promo, setPromo] = useState(null)   // применённый в корзине
   const [promoInput, setPromoInput] = useState('')
   // Данные доставки: сохраняем, чтобы не вводить заново.
@@ -330,7 +335,6 @@ export default function App() {
   useEffect(() => { if (!openCart) setCartStep('items') }, [openCart])
   // Убрали последний товар, стоя на форме — возвращаемся к списку.
   useEffect(() => { if (!cart.length) setCartStep('items') }, [cart.length])
-  useEffect(() => save('hehe.auth', auth), [auth])
   useEffect(() => { document.documentElement.lang = lang === 'ru' ? 'ru' : 'kk' }, [lang])
   // Админка открывается по адресу с #admin.
   useEffect(() => {
@@ -518,11 +522,6 @@ export default function App() {
     setOpenAdmin(false)
   }
 
-  const logout = () => {
-    closeAdmin()
-    setAuth(null)
-  }
-
   // Оверлеи не считают админку: она теперь отдельная страница, а не окно.
   const anyOverlay = openCart || openAccount || openDesigner
   const closeOverlays = () => {
@@ -533,25 +532,12 @@ export default function App() {
   /** Досрочно убрать экран «оплачено» — ждать анимацию никто не обязан. */
   const skipPaid = () => { setPaid(null); setOpenCart(false) }
 
-  // Витрина закрыта демо-входом. Пароль не сохраняется — только почта и роль.
-  if (!auth) {
-    return (
-      <Gate
-        t={t} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme}
-        onEnter={(a) => {
-          setAuth(a)
-          if (a.admin) say(t.hello_admin)
-        }}
-      />
-    )
-  }
-
   // Админка — полноэкранная страница вместо витрины, а не модальное окно.
-  if (openAdmin && auth.admin) {
+  if (openAdmin) {
     return (
       <>
         <Admin
-          auth={auth} onLogout={logout} onClose={closeAdmin} onToast={say}
+          onClose={closeAdmin} onToast={say}
           catalog={catalog} setCatalog={setCatalog}
           sizeExtra={sizeExtra} setSizeExtra={setSizeExtra}
           promos={promos} setPromos={setPromos}
@@ -604,11 +590,9 @@ export default function App() {
             ))}
           </div>
 
-          {auth.admin && (
-            <button className="btn btn-ghost" onClick={showAdmin} title={t.nav_admin}>
-              <Icon name="settings" /> <span className="hide-sm">{t.nav_admin}</span>
-            </button>
-          )}
+          <button className="btn btn-ghost" onClick={showAdmin} title={t.nav_admin}>
+            <Icon name="settings" /> <span className="hide-sm">{t.nav_admin}</span>
+          </button>
 
           <button className="btn btn-ghost" onClick={() => setOpenAccount(true)}>
             <Icon name="wallet" /> {fmt(wallet.balance)}
@@ -913,8 +897,7 @@ export default function App() {
       <footer className="footer">
         <Logo size={34} />
         <p>{t.footer}</p>
-        <span className="foot-who">{auth.email}</span>
-        <button className="link" onClick={logout}>{t.logout}</button>
+        <button className="link" onClick={showAdmin}>{t.nav_admin}</button>
         <span>© {new Date().getFullYear()} funymems.cc</span>
       </footer>
 
