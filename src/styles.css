@@ -1099,3 +1099,98 @@ a { color: inherit; text-decoration: none; }
   .card h3 { font-size: 13.5px; }
   .card .chip { padding: 4px 6px; font-size: 10px; }
 }
+
+/* ══════════ отдельные страницы ══════════ */
+.crumbs { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 14px; opacity: .8; }
+.crumbs span { opacity: .5; }
+.page-title { font-family: 'Montserrat'; font-size: clamp(30px, 5vw, 54px); font-weight: 900; line-height: 1.02; }
+.page-count {
+  display: inline-block; margin-top: 12px; padding: 5px 12px; border-radius: 999px;
+  background: var(--pill-bg); color: var(--pill-fg);
+  font-size: 11px; font-weight: 800; letter-spacing: .09em;
+}
+.muted.small { font-size: 12.5px; }
+
+/* ── корзина и оформление ── */
+.cart-sum { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 24px; }
+.cart-sum-box {
+  border: 2px solid var(--ink); border-radius: 16px; padding: 14px 16px;
+  background: var(--surface); display: flex; flex-direction: column; gap: 2px;
+}
+.cart-sum-box b { font-family: 'Montserrat'; font-size: 24px; font-weight: 800; }
+.cart-sum-box span { font-size: 12px; opacity: .6; }
+
+.cart-grid { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); align-items: start; }
+.cart-items { display: flex; flex-direction: column; gap: 14px; }
+.cart-form {
+  border: var(--line); border-radius: 22px; padding: 22px; background: var(--surface);
+  display: flex; flex-direction: column; gap: 12px; position: sticky; top: 92px;
+}
+.cart-form h3 { font-family: 'Montserrat'; font-size: 17px; margin-top: 6px; }
+.cart-form h3:first-child { margin-top: 0; }
+.cart-form textarea {
+  border: var(--line); border-radius: 12px; padding: 11px 13px; width: 100%;
+  font-family: inherit; font-size: 15px; background: var(--paper); color: var(--ink); resize: vertical;
+}
+.cart-totals { border-top: 2px dashed rgba(128,128,128,.35); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.consent { display: flex; gap: 9px; align-items: flex-start; font-size: 13px; line-height: 1.45; opacity: .85; }
+.consent input { width: 19px; height: 19px; flex-shrink: 0; accent-color: var(--hot); }
+.cart-empty {
+  border: var(--line); border-radius: 22px; padding: 34px; background: var(--surface);
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+}
+.cart-empty b { font-family: 'Montserrat'; font-size: 22px; }
+.upsell-head { margin-top: 46px; }
+
+/* ── документ (политика) ── */
+.doc { max-width: 760px; display: flex; flex-direction: column; gap: 20px; }
+.doc-lead { font-size: 17px; line-height: 1.6; }
+.doc-block h3 { font-family: 'Montserrat'; font-size: 19px; margin-bottom: 8px; }
+.doc-block p { line-height: 1.65; opacity: .8; margin-bottom: 8px; }
+.doc-block ul { margin: 4px 0 0 18px; display: flex; flex-direction: column; gap: 5px; }
+.doc-block li { line-height: 1.5; opacity: .8; }
+.doc-note {
+  border: 2px dashed rgba(128,128,128,.45); border-radius: 16px; padding: 16px;
+  font-size: 13.5px; line-height: 1.6; opacity: .7;
+}
+
+/* ── кнопка «вверх» ── */
+.to-top {
+  position: fixed; right: 16px; bottom: 88px; z-index: 56;
+  width: 48px; height: 48px; border-radius: 50%; cursor: pointer;
+  border: var(--line); background: var(--acid); color: var(--on-acid);
+  display: grid; place-items: center; box-shadow: var(--shadow);
+}
+@media (min-width: 621px) { .to-top { bottom: 24px; } }
+
+/* ── админка: форма нового товара ── */
+.anew { border: 2px dashed rgba(128,128,128,.5); border-radius: 16px; padding: 12px 14px; }
+.anew summary { cursor: pointer; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.anew-body { display: flex; flex-direction: column; gap: 12px; padding-top: 14px; }
+.anew-photos { display: flex; gap: 12px; flex-wrap: wrap; }
+.aupload {
+  position: relative; width: 128px; height: 148px; cursor: pointer; overflow: hidden;
+  border: 2px solid var(--ink); border-radius: 14px; background: var(--paper);
+  display: grid; place-items: center;
+}
+.aupload input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.aupload img { width: 100%; height: 100%; object-fit: contain; }
+.aupload-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  font-size: 11.5px; opacity: .6; text-align: center; padding: 8px;
+}
+.aupload-x {
+  position: absolute; top: 5px; right: 5px; z-index: 2;
+  width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--ink);
+  background: var(--surface); color: var(--ink); cursor: pointer; display: grid; place-items: center;
+}
+
+@media (max-width: 900px) {
+  .cart-grid { grid-template-columns: 1fr; }
+  .cart-form { position: static; }
+}
+@media (max-width: 620px) {
+  .cart-form { padding: 16px; border-radius: 18px; }
+  .cart-sum { grid-template-columns: 1fr 1fr; }
+  .doc-lead { font-size: 15.5px; }
+}

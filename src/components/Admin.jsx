@@ -3,14 +3,49 @@ import Icon from './Icon.jsx'
 import Logo from './Logo.jsx'
 import { PRODUCTS, MARKETS, SIZES, DEFAULT_SETTINGS, ADMIN_PASS, fmt, asset } from '../data.js'
 
-const ALL_SLUGS = PRODUCTS.map((p) => p.id)
+const EMPTY = {
+  ruTitle: '', ruSub: '', kkTitle: '', kkSub: '',
+  market: 'ru', base: 9900, white: '', black: '', fresh: true, adult: false,
+}
+
+/**
+ * Фото из файла ужимаем до 700px и жмём в webp: dataURL уходит в localStorage,
+ * а там лимит около 5 МБ — исходный снимок на 400 КБ забил бы его за десяток
+ * товаров. webp держит прозрачность, поэтому вырезанный фон не пропадает.
+ */
+const shrink = (file) => new Promise((resolve, reject) => {
+  const fr = new FileReader()
+  fr.onerror = () => reject(new Error('read'))
+  fr.onload = () => {
+    const img = new Image()
+    img.onerror = () => reject(new Error('decode'))
+    img.onload = () => {
+      const k = Math.min(1, 700 / Math.max(img.width, img.height))
+      const cv = document.createElement('canvas')
+      cv.width = Math.round(img.width * k)
+      cv.height = Math.round(img.height * k)
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height)
+      resolve(cv.toDataURL('image/webp', 0.85))
+    }
+    img.src = fr.result
+  }
+  fr.readAsDataURL(file)
+})
+
+/** Латинский slug из названия — им называется товар в каталоге. */
+const slugify = (s) => {
+  const map = { а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'i',к:'k',л:'l',м:'m',
+    н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'c',ч:'ch',ш:'sh',щ:'sch',ы:'y',э:'e',
+    ю:'yu',я:'ya',ә:'a',ғ:'g',қ:'k',ң:'n',ө:'o',ұ:'u',ү:'u',һ:'h',і:'i',ъ:'',ь:'' }
+  return [...s.toLowerCase()].map((c) => map[c] ?? c).join('')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 28) || 'tee'
+}
 
 const TABS = [
   ['overview', 'Обзор', 'target'],
   ['catalog', 'Каталог', 'shirt'],
   ['pricing', 'Цены', 'coin'],
   ['orders', 'Заказы', 'cart'],
-  ['promos', 'Промокоды', 'card'],
   ['settings', 'Настройки', 'settings'],
 ]
 
@@ -27,7 +62,7 @@ function Stat({ value, label, hint }) {
 
 export default function Admin({
   onClose, onToast,
-  catalog, setCatalog, sizeExtra, setSizeExtra, promos, setPromos,
+  catalog, setCatalog, sizeExtra, setSizeExtra,
   orders, setOrders, settings, setSettings, priceOf,
 }) {
   // Панель закрыта своим паролем. Защита демонстрационная: пароль лежит в коде
@@ -35,7 +70,8 @@ export default function Admin({
   const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('hehe.admin') === '1')
   const [pass, setPass] = useState('')
   const [tab, setTab] = useState('overview')
-  const [addSlug, setAddSlug] = useState(ALL_SLUGS[0])
+  const [form, setForm] = useState(EMPTY)
+  const [busy, setBusy] = useState(false)
   const [q, setQ] = useState('')
   const [openRow, setOpenRow] = useState(null)
   const [payFilter, setPayFilter] = useState('all')
@@ -49,16 +85,40 @@ export default function Admin({
     onToast('Товар удалён')
   }
 
-  const addProduct = (slug) => {
-    if (!slug) return
-    const base = PRODUCTS.find((p) => p.id === slug)
-    const id = catalog.some((p) => p.id === slug) ? `${slug}-${Date.now().toString().slice(-4)}` : slug
-    const np = base
-      ? { ...base, id }
-      : { id, market: 'ru', base: 9900, color: '#e9e7e2', hidden: false,
-          photos: { white: `/tees/${slug}-w.png`, black: `/tees/${slug}-b.png` },
-          ru: { title: slug, sub: '' }, kk: { title: slug, sub: '' } }
+  const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  const pickPhoto = async (which, file) => {
+    if (!file) return
+    if (!file.type.startsWith('image/')) return onToast('Нужен файл-картинка')
+    setBusy(true)
+    try {
+      setF(which, await shrink(file))
+    } catch {
+      onToast('Не удалось прочитать файл')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /** Создаёт товар из формы: фото, названия, цена. */
+  const addProduct = () => {
+    const title = form.ruTitle.trim()
+    if (!title) return onToast('Впиши название')
+    if (!form.white && !form.black) return onToast('Загрузи хотя бы одно фото')
+    let id = slugify(title)
+    if (catalog.some((p) => p.id === id)) id = `${id}-${Date.now().toString().slice(-4)}`
+    // Если загрузили одно фото — показываем его для обоих цветов ткани.
+    const white = form.white || form.black
+    const black = form.black || form.white
+    const np = {
+      id, market: form.market, base: Math.max(0, Number(form.base) || 0),
+      color: '#e9e7e2', hidden: false, fresh: !!form.fresh, adult: !!form.adult,
+      photos: { white, black },
+      ru: { title, sub: form.ruSub.trim() },
+      kk: { title: form.kkTitle.trim() || title, sub: form.kkSub.trim() || form.ruSub.trim() },
+    }
     setCatalog((c) => [np, ...c])
+    setForm(EMPTY)
     setOpenRow(id)
     onToast('Товар добавлен')
   }
@@ -93,21 +153,6 @@ export default function Admin({
   }, [orders])
 
   const shownOrders = payFilter === 'all' ? orders : orders.filter((o) => o.method === payFilter)
-
-  /* ── промокоды ── */
-  const [pCode, setPCode] = useState('')
-  const [pType, setPType] = useState('percent')
-  const [pVal, setPVal] = useState(10)
-  const addPromo = () => {
-    const code = pCode.trim().toUpperCase()
-    if (!code) return
-    if (promos.some((p) => p.code === code)) return onToast('Такой код уже есть')
-    setPromos((ps) => [{ code, type: pType, value: Number(pVal) || 0, active: true }, ...ps])
-    setPCode(''); setPVal(10)
-    onToast('Промокод создан')
-  }
-  const togglePromo = (code) => setPromos((ps) => ps.map((p) => (p.code === code ? { ...p, active: !p.active } : p)))
-  const delPromo = (code) => setPromos((ps) => ps.filter((p) => p.code !== code))
 
   const visibleCount = catalog.filter((p) => !p.hidden).length
   const filtered = catalog.filter((p) => {
@@ -200,7 +245,6 @@ export default function Admin({
                 <Stat value={stats.count} label="заказов" />
                 <Stat value={fmt(stats.avg)} label="средний чек" />
                 <Stat value={`${visibleCount}/${catalog.length}`} label="товаров видно" />
-                <Stat value={promos.filter((p) => p.active).length} label="активных промокодов" />
                 <Stat value={`${stats.cardCnt}/${stats.count - stats.cardCnt}`} label="карта / кошелёк" />
               </div>
 
@@ -233,14 +277,73 @@ export default function Admin({
           {tab === 'catalog' && (
             <div className="apane">
               <h2>Каталог</h2>
+              {/* ── новый товар: свои фото и тексты ── */}
+              <details className="anew" open={!catalog.length}>
+                <summary><Icon name="plus" size={14} /> Добавить свою футболку</summary>
+
+                <div className="anew-body">
+                  <div className="anew-photos">
+                    {[['white', 'Фото на белой'], ['black', 'Фото на чёрной']].map(([k, label]) => (
+                      <label key={k} className="aupload">
+                        {form[k]
+                          ? <img src={form[k]} alt="" />
+                          : <span className="aupload-empty"><Icon name="image" size={22} />{label}</span>}
+                        <input
+                          type="file" accept="image/*"
+                          onChange={(e) => { pickPhoto(k, e.target.files?.[0]); e.target.value = '' }}
+                        />
+                        {form[k] && (
+                          <button className="aupload-x" onClick={(e) => { e.preventDefault(); setF(k, '') }}>
+                            <Icon name="close" size={12} />
+                          </button>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                  <p className="muted small">
+                    Хватит и одного фото — второй цвет возьмёт то же. Картинку ужимаем до 700 px,
+                    чтобы каталог влез в память браузера.
+                  </p>
+
+                  <div className="agrid2">
+                    <label className="afield"><span>Название</span>
+                      <input value={form.ruTitle} onChange={(e) => setF('ruTitle', e.target.value)}
+                        placeholder="Шашлык не жена" /></label>
+                    <label className="afield"><span>Подзаголовок</span>
+                      <input value={form.ruSub} onChange={(e) => setF('ruSub', e.target.value)}
+                        placeholder="Смело бери 3–4 штуки" /></label>
+                    <label className="afield"><span>Название по-казахски</span>
+                      <input value={form.kkTitle} onChange={(e) => setF('kkTitle', e.target.value)}
+                        placeholder="можно оставить пустым" /></label>
+                    <label className="afield"><span>Подзаголовок по-казахски</span>
+                      <input value={form.kkSub} onChange={(e) => setF('kkSub', e.target.value)}
+                        placeholder="можно оставить пустым" /></label>
+                    <label className="afield"><span>Цена, ₸</span>
+                      <input type="number" step={100} value={form.base}
+                        onChange={(e) => setF('base', e.target.value)} /></label>
+                    <label className="afield"><span>Язык принта</span>
+                      <select value={form.market} onChange={(e) => setF('market', e.target.value)}>
+                        {Object.keys(MARKETS).map((k) => <option key={k} value={k}>{k.toUpperCase()}</option>)}
+                      </select></label>
+                  </div>
+
+                  <div className="arow-tools">
+                    <button className={`chip ${form.fresh ? 'on' : ''}`} onClick={() => setF('fresh', !form.fresh)}>
+                      Новинка
+                    </button>
+                    <button className={`chip ${form.adult ? 'on' : ''}`} onClick={() => setF('adult', !form.adult)}>
+                      18+
+                    </button>
+                    <button className="btn btn-solid" onClick={addProduct} disabled={busy}>
+                      <Icon name="plus" size={14} /> {busy ? 'Читаю фото…' : 'Добавить в каталог'}
+                    </button>
+                    <button className="btn" onClick={() => setForm(EMPTY)}>Очистить</button>
+                  </div>
+                </div>
+              </details>
+
               <div className="arow-tools">
                 <input className="asearch" placeholder="Поиск по названию" value={q} onChange={(e) => setQ(e.target.value)} />
-                <select value={addSlug} onChange={(e) => setAddSlug(e.target.value)}>
-                  {ALL_SLUGS.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-                <button className="btn btn-solid" onClick={() => addProduct(addSlug)}>
-                  <Icon name="plus" size={14} /> Добавить
-                </button>
                 <button className="btn" onClick={() => setAllHidden(false)}>Показать все</button>
                 <button className="btn" onClick={() => setAllHidden(true)}>Скрыть все</button>
                 <span className="muted">товаров: {catalog.length}, видно: {visibleCount}</span>
@@ -430,35 +533,6 @@ export default function Admin({
                     </div>
                   )}
                   <div className="muted">{(o.items || []).map((i) => `${i.title} ×${i.qty}`).join(' · ')}</div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ── Промокоды ── */}
-          {tab === 'promos' && (
-            <div className="apane">
-              <h2>Промокоды</h2>
-              <div className="arow-tools">
-                <input placeholder="КОД" className="acode" value={pCode}
-                  onChange={(e) => setPCode(e.target.value.toUpperCase())} />
-                <select value={pType} onChange={(e) => setPType(e.target.value)}>
-                  <option value="percent">%</option>
-                  <option value="fixed">₸</option>
-                </select>
-                <input type="number" className="anum" value={pVal} onChange={(e) => setPVal(e.target.value)} />
-                <button className="btn btn-solid" onClick={addPromo}><Icon name="plus" size={14} /> Создать</button>
-              </div>
-
-              {!promos.length && <p className="empty">Промокодов нет</p>}
-              {promos.map((p) => (
-                <div key={p.code} className={`apromo ${p.active ? '' : 'off'}`}>
-                  <b>{p.code}</b>
-                  <span>{p.type === 'percent' ? `−${p.value}%` : `−${fmt(p.value)}`}</span>
-                  <button className={`chip ${p.active ? 'on' : ''}`} onClick={() => togglePromo(p.code)}>
-                    {p.active ? 'Активен' : 'Выключен'}
-                  </button>
-                  <button className="link danger" onClick={() => delPromo(p.code)}>Удалить</button>
                 </div>
               ))}
             </div>

@@ -6,6 +6,10 @@ import Account from './components/Account.jsx'
 import Designer from './components/Designer.jsx'
 import Admin from './components/Admin.jsx'
 import Icon from './components/Icon.jsx'
+import Card from './components/Card.jsx'
+import CatalogPage from './components/CatalogPage.jsx'
+import CartPage from './components/CartPage.jsx'
+import Privacy from './components/Privacy.jsx'
 import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, T, fmt, DEFAULT_SETTINGS, COLLECTIONS, CONTACTS } from './data.js'
 
 const load = (k, d) => {
@@ -145,83 +149,6 @@ function PaidScreen({ t, paid, onSkip }) {
   )
 }
 
-/* ─────────────── карточка товара ─────────────── */
-function Card({ p, lang, t, onAdd, isFav, onFav, priceOf }) {
-  const [hover, setHover] = useState(false)
-  const [size, setSize] = useState('M')
-  const [color, setColor] = useState('black')
-  const mediaRef = useRef(null)
-  const m = MARKETS[p.market]
-  const shown = { ...p, photo: p.photos[color] }
-
-  // Отдаём наверх прямоугольник картинки: от него полетит копия в корзину.
-  const add = () => onAdd(p, size, color, mediaRef.current?.getBoundingClientRect())
-
-  return (
-    <motion.article
-      /* Без layout: карточка рендерится в двух сетках («что покупают» и каталог),
-         и проекция layout-анимации оставляла на них залипший translateY —
-         первая карточка наезжала на заголовок секции. Появление и фильтрацию
-         анимируют initial/whileInView и AnimatePresence, их достаточно. */
-      id={`card-${p.id}`}
-      className="card"
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ type: 'spring', stiffness: 120, damping: 18 }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      whileHover={{ y: -8 }}
-    >
-      <span className="rarity" style={{ background: m.color }}>{m[lang]}</span>
-      {p.fresh && <span className="rarity is-new">{t.badge_new}</span>}
-
-      <motion.button
-        className={`fav ${isFav ? 'on' : ''}`}
-        onClick={() => onFav(p)}
-        whileTap={{ scale: 0.8 }}
-        animate={isFav ? { scale: [1, 1.35, 1] } : {}}
-        aria-label={t.to_fav}
-        title={t.to_fav}
-      >
-        <Icon name="heart" size={17} style={{ fill: isFav ? 'currentColor' : 'none' }} />
-      </motion.button>
-
-      <div ref={mediaRef} className="card-media" style={{ background: `radial-gradient(circle at 50% 40%, ${p.color}22, transparent 70%)` }}>
-        <Tshirt product={shown} lang={lang} hovered={hover} />
-      </div>
-
-      <h3>{p[lang].title}</h3>
-      <p className="card-sub">{p[lang].sub}</p>
-
-      <div className="sizes">
-        <span className="sizes-label">{t.color}</span>
-        {[['black', t.c_black], ['white', t.c_white]].map(([c, label]) => (
-          <button key={c} className={`chip ${color === c ? 'on' : ''}`} onClick={() => setColor(c)}>
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="sizes">
-        <span className="sizes-label">{t.size}</span>
-        {SIZES.map((s) => (
-          <button key={s} className={`chip ${size === s ? 'on' : ''}`} onClick={() => setSize(s)}>
-            {s}
-          </button>
-        ))}
-      </div>
-
-      <div className="card-foot">
-        <span className="price">{fmt(priceOf(p, size))}</span>
-        <motion.button className="btn btn-add" onClick={add} whileTap={{ scale: 0.88 }}>
-          {t.add}
-        </motion.button>
-      </div>
-    </motion.article>
-  )
-}
-
 /* ─────────────── таймер дропа ─────────────── */
 function Countdown({ t }) {
   const target = useMemo(() => {
@@ -305,17 +232,19 @@ export default function App() {
   // Данные доставки: сохраняем, чтобы не вводить заново.
   const [customer, setCustomer] = useState(() => load('hehe.customer', { name: '', phone: '', city: '', address: '' }))
 
-  const [openCart, setOpenCart] = useState(false)
   const [openAccount, setOpenAccount] = useState(false)
   const [openDesigner, setOpenDesigner] = useState(false)
   const [openAdmin, setOpenAdmin] = useState(() => window.location.hash === '#admin')
+  // Маршрут держим в хэше: у каждой подборки и у корзины свой адрес, его можно
+  // дать ссылкой и открыть из закладок. Раньше всё жило фильтром на главной.
+  const [route, setRoute] = useState(() => window.location.hash.replace(/^#/, '') || '/')
   const [toast, setToast] = useState(null)
   const [filter, setFilter] = useState('all')
   const [paying, setPaying] = useState(false)
   const [paid, setPaid] = useState(null)     // экран «оплачено» поверх корзины
   const [flights, setFlights] = useState([]) // летящие в корзину копии товара
-  const [cartStep, setCartStep] = useState('items')  // items → form
   const [bottomTab, setBottomTab] = useState('home')  // подсветка нижней панели
+  const [showTop, setShowTop] = useState(false)       // кнопка «вверх»
   const cartBtnRef = useRef(null)   // корзина в шапке
   const cartBarRef = useRef(null)   // корзина в нижней панели (телефон)
   const t = T[lang]
@@ -338,14 +267,16 @@ export default function App() {
   useEffect(() => save('hehe.promos', promos), [promos])
   useEffect(() => save('hehe.customer', customer), [customer])
   useEffect(() => save('hehe.settings', settings), [settings])
-  // Корзина всегда открывается со списком, а не на форме с прошлого раза.
-  useEffect(() => { if (!openCart) setCartStep('items') }, [openCart])
-  // Убрали последний товар, стоя на форме — возвращаемся к списку.
-  useEffect(() => { if (!cart.length) setCartStep('items') }, [cart.length])
   useEffect(() => { document.documentElement.lang = lang === 'ru' ? 'ru' : 'kk' }, [lang])
   // Админка открывается по адресу с #admin.
   useEffect(() => {
-    const onHash = () => setOpenAdmin(window.location.hash === '#admin')
+    const onHash = () => {
+      const h = window.location.hash.replace(/^#/, '')
+      setOpenAdmin(h === 'admin')
+      setRoute(h || '/')
+      // Новая страница всегда начинается сверху, а не с прошлой прокрутки.
+      window.scrollTo({ top: 0 })
+    }
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
@@ -353,6 +284,14 @@ export default function App() {
     save('hehe.theme', theme)
     document.documentElement.dataset.theme = theme
   }, [theme])
+
+  // Кнопку «вверх» показываем, когда уехали заметно вниз.
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > 700)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const { scrollYProgress } = useScroll()
   const bar = useSpring(scrollYProgress, { stiffness: 120, damping: 24 })
@@ -484,8 +423,8 @@ export default function App() {
     setOrders((o) => [order, ...o])
 
     // Порядок важен. Сначала наплывает экран «оплачено», и только под ним
-    // чистим корзину: очистка на виду схлопывает форму доставки, промокод и
-    // итоги разом — шторка дёргается. Под непрозрачным экраном это не видно.
+    // чистим корзину: очистка на виду схлопывает форму и итоги разом, страница
+    // дёргается. Под непрозрачным экраном этого не видно.
     const earned = payMethod === 'wallet' ? cashback : 0
     setPaying(false)
     setPaid({ total, coins: earned })
@@ -495,8 +434,7 @@ export default function App() {
     setPromo(null); setPromoInput('')
 
     await sleep(1200)                   // даём прочитать сумму
-    setOpenCart(false)
-    // Ждём, пока шторка уедет, и только тогда снимаем экран оплаты.
+    navigate('/')                       // корзина пуста — возвращаем на витрину
     setTimeout(() => setPaid(null), 400)
     say(earned ? `${t.pay_ok} +${earned} ${t.added_coins}` : t.pay_ok)
   }
@@ -519,11 +457,30 @@ export default function App() {
     : activeColl ? inCollection(activeColl)
     : visible.filter((p) => p.market === filter)
 
-  /** Ставит фильтр и уводит к каталогу — как «Открыть подборку» у образца. */
+  /** Переход по адресу: страницы каталога, корзина, политика. */
+  const navigate = (to) => {
+    if (window.location.hash === '#' + to) { window.scrollTo({ top: 0 }); return }
+    window.location.hash = to
+  }
+  const openCart = route === '/cart'
+  const setOpenCart = (v) => navigate(v ? '/cart' : '/')
+
+  /** Ставит фильтр и уводит к каталогу на главной. */
   const gotoCatalog = (f = 'all') => {
+    if (route !== '/') { navigate('/catalog' + (f === 'all' ? '' : '/' + f.replace('coll:', ''))); return }
     setFilter(f)
     document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
+
+  /* ── страницы каталога: свой адрес, заголовок и набор товаров ── */
+  const PAGES = {
+    '/catalog':        { title: t.pg_all, desc: t.pg_all_d,  items: visible },
+    '/catalog/ru':     { title: t.pg_ru,  desc: t.pg_ru_d,   items: visible.filter((x) => x.market === 'ru') },
+    '/catalog/kk':     { title: t.pg_kk,  desc: t.pg_kk_d,   items: visible.filter((x) => x.market === 'kk') },
+    '/catalog/adult':  { title: t.pg_18,  desc: t.pg_18_d,   items: visible.filter((x) => x.adult) },
+    '/catalog/fresh':  { title: t.pg_new, desc: t.pg_new_d,  items: visible.filter((x) => x.fresh) },
+  }
+  const page = PAGES[route]
   const heroTee = findProduct('shashlyk') || visible[0] || PRODUCTS[0]
 
   const showAdmin = () => {
@@ -537,14 +494,14 @@ export default function App() {
   }
 
   // Оверлеи не считают админку: она теперь отдельная страница, а не окно.
-  const anyOverlay = openCart || openAccount || openDesigner
+  const anyOverlay = openAccount || openDesigner
   const closeOverlays = () => {
-    setOpenCart(false); setOpenAccount(false); setOpenDesigner(false)
+    setOpenAccount(false); setOpenDesigner(false)
     setPaid(null)
   }
 
   /** Досрочно убрать экран «оплачено» — ждать анимацию никто не обязан. */
-  const skipPaid = () => { setPaid(null); setOpenCart(false) }
+  const skipPaid = () => { setPaid(null); if (!cart.length) navigate('/') }
 
   // Админка — полноэкранная страница вместо витрины, а не модальное окно.
   if (openAdmin) {
@@ -554,7 +511,6 @@ export default function App() {
           onClose={closeAdmin} onToast={say}
           catalog={catalog} setCatalog={setCatalog}
           sizeExtra={sizeExtra} setSizeExtra={setSizeExtra}
-          promos={promos} setPromos={setPromos}
           orders={orders} setOrders={setOrders}
           settings={settings} setSettings={setSettings}
           priceOf={priceOf}
@@ -625,6 +581,7 @@ export default function App() {
         </div>
       </header>
 
+      {route === '/' && (<>
       {/* ── герой ── */}
       <section className="hero">
         <div className="hero-blob b1" />
@@ -910,25 +867,55 @@ export default function App() {
           </div>
         </div>
       </section>
+      </>)}
+
+      {/* ── отдельные страницы каталога ── */}
+      {page && (
+        <CatalogPage
+          t={t} lang={lang} title={page.title} desc={page.desc} products={page.items}
+          onAdd={addToCart} priceOf={priceOf} favorites={favorites} onFav={onFav}
+          onDesigner={() => setOpenDesigner(true)} onHome={() => navigate('/')}
+        />
+      )}
+
+      {/* ── корзина и оформление ── */}
+      {route === '/cart' && (
+        <CartPage
+          t={t} lang={lang} cart={cart} resolveItem={resolveItem}
+          setQty={setQty} removeFromCart={removeFromCart}
+          subtotal={subtotal} discount={discount} total={total} cashback={cashback}
+          promo={promo} promoInput={promoInput} setPromoInput={setPromoInput} applyPromo={applyPromo}
+          customer={customer} setCustomer={setCustomer}
+          payMethod={payMethod} setPayMethod={setPayMethod} wallet={wallet} settings={settings}
+          checkout={checkout} paying={paying} count={count}
+          upsell={visible.filter((x) => !cart.some((i) => i.id === x.id)).slice(0, 4)}
+          onAdd={addToCart} priceOf={priceOf} favorites={favorites} onFav={onFav}
+          onHome={() => navigate('/')} onCatalog={() => navigate('/catalog')}
+          onPrivacy={() => navigate('/privacy')}
+        />
+      )}
+
+      {route === '/privacy' && <Privacy t={t} onHome={() => navigate('/')} />}
 
       <footer className="footer">
         <div className="foot-cols">
           <div className="foot-col">
             <h4>{t.foot_catalog}</h4>
-            <button className="foot-link" onClick={() => gotoCatalog('ru')}>{t.foot_ru}</button>
-            <button className="foot-link" onClick={() => gotoCatalog('kk')}>{t.foot_kk}</button>
-            <button className="foot-link" onClick={() => gotoCatalog('adult')}>{t.foot_18}</button>
-            <button className="foot-link" onClick={() => gotoCatalog('coll:fresh')}>{t.foot_new}</button>
-            <button className="foot-link" onClick={() => gotoCatalog('all')}>{t.foot_all}</button>
+            <button className="foot-link" onClick={() => navigate('/catalog/ru')}>{t.foot_ru}</button>
+            <button className="foot-link" onClick={() => navigate('/catalog/kk')}>{t.foot_kk}</button>
+            <button className="foot-link" onClick={() => navigate('/catalog/adult')}>{t.foot_18}</button>
+            <button className="foot-link" onClick={() => navigate('/catalog/fresh')}>{t.foot_new}</button>
+            <button className="foot-link" onClick={() => navigate('/catalog')}>{t.foot_all}</button>
           </div>
 
           <div className="foot-col">
             <h4>{t.foot_buyer}</h4>
-            <button className="foot-link" onClick={() => setOpenCart(true)}>{t.foot_cart}</button>
+            <button className="foot-link" onClick={() => navigate('/cart')}>{t.foot_cart}</button>
             <a className="foot-link" href="#how">{t.foot_how}</a>
             <a className="foot-link" href="#collections">{t.foot_coll}</a>
             <a className="foot-link" href="#pay">{t.foot_pay}</a>
-            <a className="foot-link" href="#about">{t.foot_about}</a>
+            <a className="foot-link" href="#/">{t.foot_about}</a>
+            <button className="foot-link" onClick={() => navigate('/privacy')}>{t.pp_title}</button>
           </div>
 
           <div className="foot-col">
@@ -964,148 +951,6 @@ export default function App() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {openCart && (
-            <motion.aside
-              key="cart" className="drawer"
-              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-              transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-            >
-              <div className="drawer-head">
-                {cartStep === 'form' && (
-                  <button className="x back" onClick={() => setCartStep('items')} aria-label="назад">
-                    <Icon name="undo" size={15} />
-                  </button>
-                )}
-                <h3>{cartStep === 'form' ? t.checkout_title : t.cart}</h3>
-                <button className="x" onClick={() => { setOpenCart(false); setPaid(null) }} aria-label="close"><Icon name="close" size={15} /></button>
-              </div>
-
-              {/* Шаг 1 — что лежит в корзине. Шаг 2 — данные и оплата.
-                  Раньше форма доставки висела под списком всегда, и корзина
-                  открывалась сразу простынёй из полей. */}
-              <AnimatePresence mode="wait" initial={false}>
-                {cartStep === 'items' ? (
-                  <motion.div
-                    key="step-items" className="cart-step"
-                    initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}
-                    transition={{ duration: 0.22, ease: 'easeOut' }}
-                  >
-                    {!cart.length && <p className="empty">{t.cart_empty}</p>}
-
-                    <div className="drawer-list">
-                      {cart.map((i) => {
-                        const { product, title, price } = resolveItem(i)
-                        return (
-                          <motion.div key={i.key} layout className="line"
-                            initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 30 }}>
-                            <div className="line-thumb" style={{ background: product.color }}>
-                              <Tshirt product={product} lang={lang} />
-                            </div>
-                            <div className="line-info">
-                              <b>{title}</b>
-                              <span>{i.size}</span>
-                              <div className="qty">
-                                <button onClick={() => setQty(i.key, -1)} aria-label="−"><Icon name="minus" size={14} /></button>
-                                <b>{i.qty}</b>
-                                <button onClick={() => setQty(i.key, +1)} aria-label="+"><Icon name="plus" size={14} /></button>
-                              </div>
-                            </div>
-                            <div className="line-end">
-                              <span className="line-price">{fmt(price * i.qty)}</span>
-                              <button className="link" onClick={() => removeFromCart(i.key)}>{t.remove}</button>
-                            </div>
-                          </motion.div>
-                        )
-                      })}
-                    </div>
-
-                    {cart.length > 0 && (
-                      <div className="drawer-foot">
-                        <div className="row"><span>{t.total}</span><b>{fmt(total)}</b></div>
-                        <button className="btn btn-solid full big" onClick={() => setCartStep('form')}>
-                          {t.to_checkout}
-                        </button>
-                      </div>
-                    )}
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="step-form" className="cart-step"
-                    initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 24 }}
-                    transition={{ duration: 0.22, ease: 'easeOut' }}
-                  >
-                    <div className="drawer-list">
-                      <div className="ship">
-                        <span className="pay-label">{t.ship_title}</span>
-                        <div className="ship-grid">
-                          <input placeholder={t.f_name} value={customer.name}
-                            onChange={(e) => setCustomer((c) => ({ ...c, name: e.target.value }))} />
-                          <input placeholder={t.f_phone} inputMode="tel" value={customer.phone}
-                            onChange={(e) => setCustomer((c) => ({ ...c, phone: e.target.value }))} />
-                          <input placeholder={t.f_city} value={customer.city}
-                            onChange={(e) => setCustomer((c) => ({ ...c, city: e.target.value }))} />
-                          <input placeholder={t.f_address} value={customer.address}
-                            onChange={(e) => setCustomer((c) => ({ ...c, address: e.target.value }))} />
-                        </div>
-                      </div>
-
-                      <div className="pay-methods">
-                        <span className="pay-label">{t.pay_method}</span>
-                        <div className="d-row">
-                          <button
-                            className={`chip big ${payMethod === 'card' ? 'on' : ''}`}
-                            onClick={() => setPayMethod('card')}
-                          >
-                            <Icon name="card" /> {t.pay_card} •••• 4242
-                          </button>
-                          <button
-                            className={`chip big ${payMethod === 'wallet' ? 'on' : ''}`}
-                            onClick={() => setPayMethod('wallet')}
-                          >
-                            <Icon name="wallet" /> {t.pay_wallet}
-                          </button>
-                        </div>
-                        <small className="muted">
-                          {payMethod === 'card' ? t.card_demo : `${t.balance}: ${fmt(wallet.balance)} · ${t.cashback}`}
-                        </small>
-                      </div>
-
-                      <div className="promo">
-                        <input
-                          placeholder={t.promo_ph} value={promoInput}
-                          onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                          onKeyDown={(e) => e.key === 'Enter' && applyPromo()}
-                        />
-                        <button className="btn" onClick={applyPromo}>{t.apply}</button>
-                      </div>
-
-                      <p className="muted">{t.in_cart}: {count}</p>
-                    </div>
-
-                    <div className="drawer-foot">
-                      {discount > 0 && (
-                        <div className="row muted"><span>{t.discount} · {promo.code}</span><b>−{fmt(discount)}</b></div>
-                      )}
-                      <div className="row"><span>{t.total}</span><b>{fmt(total)}</b></div>
-                      {payMethod === 'wallet' && (
-                        <div className="row muted"><span>{t.cashback}</span><b className="with-icon"><Icon name="coin" size={15} /> +{cashback}</b></div>
-                      )}
-                      <button className="btn btn-solid full big" onClick={checkout} disabled={!cart.length || paying}>
-                        {paying ? t.processing : t.checkout}
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <AnimatePresence>
-                {paid && <PaidScreen key="paid" t={t} paid={paid} onSkip={skipPaid} />}
-              </AnimatePresence>
-            </motion.aside>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
           {openDesigner && (
             <Designer
               key="designer" t={t} lang={lang}
@@ -1130,6 +975,11 @@ export default function App() {
 
       </div>
 
+      {/* ── экран «оплачено» поверх страницы ── */}
+      <AnimatePresence>
+        {paid && <PaidScreen key="paid" t={t} paid={paid} onSkip={skipPaid} />}
+      </AnimatePresence>
+
       {/* ── копии товара, летящие в корзину ── */}
       <div className="flyer-layer">
         {flights.map((f) => (
@@ -1139,6 +989,20 @@ export default function App() {
           />
         ))}
       </div>
+
+      {/* ── кнопка «вверх»: на телефоне страницы длинные ── */}
+      <AnimatePresence>
+        {showTop && (
+          <motion.button
+            key="totop" className="to-top" aria-label={t.to_top} title={t.to_top}
+            initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }}
+            whileTap={{ scale: 0.88 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          >
+            <Icon name="up" size={20} />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* ── нижняя панель (только телефон), как у образца ── */}
       <nav className="bottombar">
