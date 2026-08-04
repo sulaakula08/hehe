@@ -5,13 +5,10 @@ import Icon from './Icon.jsx'
 import { MARKETS, SIZES, fmt } from '../data.js'
 
 /* ─────────────── карточка товара ─────────────── */
-export default function Card({ p, lang, t, onAdd, isFav, onFav, priceOf }) {
+export default function Card({ p, lang, t, onAdd, isFav, onFav, priceOf, onZoom }) {
   const [hover, setHover] = useState(false)
   const [size, setSize] = useState('M')
   const [color, setColor] = useState('black')
-  // На телефоне карточки маленькие: по тапу футболка разворачивается на всю
-  // ширину сетки, повторный тап возвращает как было.
-  const [zoom, setZoom] = useState(false)
   const mediaRef = useRef(null)
   const m = MARKETS[p.market]
   const shown = { ...p, photo: p.photos[color] }
@@ -26,7 +23,7 @@ export default function Card({ p, lang, t, onAdd, isFav, onFav, priceOf }) {
          первая карточка наезжала на заголовок секции. Появление и фильтрацию
          анимируют initial/whileInView и AnimatePresence, их достаточно. */
       id={`card-${p.id}`}
-      className={`card ${zoom ? 'is-zoom' : ''}`}
+      className="card"
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-60px' }}
@@ -49,21 +46,20 @@ export default function Card({ p, lang, t, onAdd, isFav, onFav, priceOf }) {
         <Icon name="heart" size={17} style={{ fill: isFav ? 'currentColor' : 'none' }} />
       </motion.button>
 
-      <motion.div
+      {/* Растёт только футболка — в отдельном просмотре поверх страницы.
+          Раньше разворачивалась вся карточка и распихивала соседние. */}
+      <div
         ref={mediaRef}
         className="card-media"
         role="button" tabIndex={0}
-        aria-label={zoom ? t.zoom_out : t.zoom_in}
-        title={zoom ? t.zoom_out : t.zoom_in}
-        onClick={() => setZoom((z) => !z)}
-        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setZoom((z) => !z))}
-        animate={{ scale: 1 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 22 }}
+        aria-label={t.zoom_in} title={t.zoom_in}
+        onClick={() => onZoom?.(shown)}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onZoom?.(shown))}
         style={{ background: `radial-gradient(circle at 50% 40%, ${p.color}22, transparent 70%)` }}
       >
-        <Tshirt product={shown} lang={lang} hovered={hover || zoom} big={zoom} />
-        <span className="zoom-hint"><Icon name={zoom ? 'minus' : 'plus'} size={13} /></span>
-      </motion.div>
+        <Tshirt product={shown} lang={lang} hovered={hover} />
+        <span className="zoom-hint"><Icon name="plus" size={13} /></span>
+      </div>
 
       <h3>{p[lang].title}</h3>
       <p className="card-sub">{p[lang].sub}</p>

@@ -8,7 +8,7 @@ import Icon from './Icon.jsx'
  * у каждой подборки свой адрес, его можно дать ссылкой и открыть из закладок.
  */
 export default function CatalogPage({
-  t, lang, title, desc, products, onAdd, priceOf, favorites, onFav, onDesigner, onHome,
+  t, lang, title, desc, products, onAdd, priceOf, favorites, onFav, onDesigner, onHome, onZoom,
 }) {
   return (
     <section className="section wrap">
@@ -36,7 +36,7 @@ export default function CatalogPage({
           <Card
             key={p.id} p={p} lang={lang} t={t}
             onAdd={onAdd} priceOf={priceOf}
-            isFav={favorites.includes(p.id)} onFav={onFav}
+            isFav={favorites.includes(p.id)} onFav={onFav} onZoom={onZoom}
           />
         ))}
       </motion.div>

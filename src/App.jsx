@@ -245,6 +245,7 @@ export default function App() {
   const [flights, setFlights] = useState([]) // летящие в корзину копии товара
   const [bottomTab, setBottomTab] = useState('home')  // подсветка нижней панели
   const [showTop, setShowTop] = useState(false)       // кнопка «вверх»
+  const [zoomed, setZoomed] = useState(null)          // футболка в увеличении
   const cartBtnRef = useRef(null)   // корзина в шапке
   const cartBarRef = useRef(null)   // корзина в нижней панели (телефон)
   const t = T[lang]
@@ -284,6 +285,14 @@ export default function App() {
     save('hehe.theme', theme)
     document.documentElement.dataset.theme = theme
   }, [theme])
+
+  // Просмотр закрывается с клавиатуры — на десктопе так привычнее.
+  useEffect(() => {
+    if (!zoomed) return
+    const onKey = (e) => e.key === 'Escape' && setZoomed(null)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [zoomed])
 
   // Кнопку «вверх» показываем, когда уехали заметно вниз.
   useEffect(() => {
@@ -749,7 +758,7 @@ export default function App() {
             <Card
               key={`pop-${pr.id}`} p={pr} lang={lang} t={t}
               onAdd={addToCart} priceOf={priceOf}
-              isFav={favorites.includes(pr.id)} onFav={onFav}
+              isFav={favorites.includes(pr.id)} onFav={onFav} onZoom={setZoomed}
             />
           ))}
         </div>
@@ -873,7 +882,7 @@ export default function App() {
       {page && (
         <CatalogPage
           t={t} lang={lang} title={page.title} desc={page.desc} products={page.items}
-          onAdd={addToCart} priceOf={priceOf} favorites={favorites} onFav={onFav}
+          onAdd={addToCart} priceOf={priceOf} favorites={favorites} onFav={onFav} onZoom={setZoomed}
           onDesigner={() => setOpenDesigner(true)} onHome={() => navigate('/')}
         />
       )}
@@ -891,7 +900,7 @@ export default function App() {
           upsell={visible.filter((x) => !cart.some((i) => i.id === x.id)).slice(0, 4)}
           onAdd={addToCart} priceOf={priceOf} favorites={favorites} onFav={onFav}
           onHome={() => navigate('/')} onCatalog={() => navigate('/catalog')}
-          onPrivacy={() => navigate('/privacy')}
+          onPrivacy={() => navigate('/privacy')} onZoom={setZoomed}
         />
       )}
 
@@ -974,6 +983,31 @@ export default function App() {
         </AnimatePresence>
 
       </div>
+
+      {/* ── увеличенная футболка ── */}
+      <AnimatePresence>
+        {zoomed && (
+          <motion.div
+            key="zoom" className="zoomview"
+            onClick={() => setZoomed(null)}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          >
+            <motion.div
+              className="zoomview-tee"
+              initial={{ scale: 0.7, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.75, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 210, damping: 22 }}
+            >
+              <Tshirt product={zoomed} lang={lang} hovered big />
+            </motion.div>
+            <div className="zoomview-bar">
+              <b>{zoomed[lang]?.title}</b>
+              <span className="muted">{t.zoom_out}</span>
+            </div>
+            <button className="x float" aria-label={t.zoom_out}><Icon name="close" size={15} /></button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── экран «оплачено» поверх страницы ── */}
       <AnimatePresence>

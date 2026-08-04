@@ -1218,7 +1218,6 @@ a { color: inherit; text-decoration: none; }
 
 /* ── увеличение футболки по тапу ── */
 .card-media { cursor: zoom-in; position: relative; }
-.card.is-zoom .card-media { cursor: zoom-out; }
 .zoom-hint {
   position: absolute; right: 8px; bottom: 8px; z-index: 2;
   width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
@@ -1226,15 +1225,22 @@ a { color: inherit; text-decoration: none; }
 }
 .card-media:hover .zoom-hint { opacity: 1; }
 
+/* ── увеличенная футболка поверх страницы ──
+   Раньше разворачивалась карточка и сдвигала соседние: в сетке это заметный
+   скачок. Теперь растёт только футболка, макет не трогаем вовсе. */
+.zoomview {
+  position: fixed; inset: 0; z-index: 70; cursor: zoom-out;
+  background: rgba(12, 10, 8, .82); backdrop-filter: blur(4px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 22px;
+}
+.zoomview-tee { width: min(72vw, 620px); max-height: 76vh; display: grid; place-items: center; }
+.zoomview-tee svg, .zoomview-tee img { width: 100%; height: auto; max-height: 76vh; object-fit: contain; }
+.zoomview-bar { text-align: center; color: #f4f1ea; display: flex; flex-direction: column; gap: 3px; }
+.zoomview-bar b { font-family: 'Montserrat'; font-size: 19px; }
+.zoomview-bar .muted { color: #f4f1ea; opacity: .55; font-size: 13px; }
+.zoomview .x.float { background: var(--acid); color: var(--on-acid); border-color: var(--on-acid); }
 @media (max-width: 620px) {
-  /* Развёрнутая карточка занимает обе колонки — футболку видно крупно. */
-  .card.is-zoom { grid-column: 1 / -1; }
-  .card.is-zoom .card-media { min-height: 330px; }
-  .card.is-zoom h3 { font-size: 19px; }
-  .card.is-zoom .card-sub { display: block; font-size: 13.5px; }
-  .card.is-zoom .sizes-label { display: inline; }
-  .card.is-zoom .chip { padding: 6px 11px; font-size: 12.5px; }
-  .card.is-zoom .card-foot { flex-direction: row; align-items: center; }
-  .card.is-zoom .price { font-size: 21px; }
-  .card.is-zoom .btn-add { width: auto; }
+  .zoomview-tee { width: 88vw; max-height: 62vh; }
+  .zoomview-tee svg, .zoomview-tee img { max-height: 62vh; }
 }

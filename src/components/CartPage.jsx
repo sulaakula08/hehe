@@ -15,7 +15,7 @@ export default function CartPage({
   subtotal, discount, total, cashback, promo, promoInput, setPromoInput, applyPromo,
   customer, setCustomer, payMethod, setPayMethod, wallet, settings,
   checkout, paying, count, upsell, onAdd, priceOf, favorites, onFav,
-  onHome, onCatalog, onPrivacy,
+  onHome, onCatalog, onPrivacy, onZoom,
 }) {
   const [agree, setAgree] = useState(false)
   const set = (k) => (e) => setCustomer((c) => ({ ...c, [k]: e.target.value }))
@@ -189,7 +189,7 @@ export default function CartPage({
               <Card
                 key={`up-${p.id}`} p={p} lang={lang} t={t}
                 onAdd={onAdd} priceOf={priceOf}
-                isFav={favorites.includes(p.id)} onFav={onFav}
+                isFav={favorites.includes(p.id)} onFav={onFav} onZoom={onZoom}
               />
             ))}
           </div>
