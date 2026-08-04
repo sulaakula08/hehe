@@ -6,7 +6,7 @@ import Account from './components/Account.jsx'
 import Designer from './components/Designer.jsx'
 import Admin from './components/Admin.jsx'
 import Icon from './components/Icon.jsx'
-import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, T, fmt, DEFAULT_SETTINGS, COLLECTIONS } from './data.js'
+import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, T, fmt, DEFAULT_SETTINGS, COLLECTIONS, CONTACTS } from './data.js'
 
 const load = (k, d) => {
   try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch { return d }
@@ -283,13 +283,18 @@ export default function App() {
     const known = new Set(load('hehe.knownIds', []))
     const have = new Set(saved.map((p) => p.id))
     const added = PRODUCTS.filter((p) => !have.has(p.id) && !known.has(p.id))
-    // Флаг fresh появился позже сохранённого каталога, поэтому у старых записей
-    // его нет и подборка «Новинки» оказалась бы пустой. Подставляем значение из
-    // data.js только когда флага нет вовсе: явное true/false из админки не трогаем.
+    // Флаги fresh и adult появились позже сохранённого каталога, поэтому у старых
+    // записей их нет и разделы «Новинки» и 18+ оказались бы пустыми. Подставляем
+    // значение из data.js только там, где флага нет вовсе: явное true/false,
+    // выставленное в админке, не перетираем.
     const byId = new Map(PRODUCTS.map((p) => [p.id, p]))
-    const patched = saved.map((p) => (
-      p.fresh === undefined ? { ...p, fresh: !!byId.get(p.id)?.fresh } : p
-    ))
+    const patched = saved.map((p) => {
+      const def = byId.get(p.id)
+      const add = {}
+      if (p.fresh === undefined) add.fresh = !!def?.fresh
+      if (p.adult === undefined) add.adult = !!def?.adult
+      return Object.keys(add).length ? { ...p, ...add } : p
+    })
     return [...added, ...patched]
   })
   const [sizeExtra, setSizeExtra] = useState(() => load('hehe.sizeExtra', SIZE_EXTRA))
@@ -502,6 +507,7 @@ export default function App() {
     ? COLLECTIONS.find((c) => c.id === filter.slice(5))
     : null
   const shown = filter === 'all' ? visible
+    : filter === 'adult' ? visible.filter((p) => p.adult)
     : activeColl ? inCollection(activeColl)
     : visible.filter((p) => p.market === filter)
 
@@ -755,7 +761,7 @@ export default function App() {
       </section>
 
       {/* ── преимущества ── */}
-      <div className="wrap">
+      <div className="wrap" id="pay">
         <div className="benefits">
           {[['cart', t.ben_1_t, t.ben_1_d], ['coin', t.ben_2_t, t.ben_2_d],
             ['brush', t.ben_3_t, t.ben_3_d], ['hand', t.ben_4_t, t.ben_4_d]].map(([ic, ti, de]) => (
@@ -812,6 +818,9 @@ export default function App() {
               {r[lang]}
             </button>
           ))}
+          <button className={`chip big ${filter === 'adult' ? 'on' : ''}`} onClick={() => setFilter('adult')}>
+            {t.foot_18}
+          </button>
           {/* Активная подборка показывается отдельным чипом со сбросом. */}
           {activeColl && (
             <button className="chip big on" onClick={() => setFilter('all')}>
@@ -878,7 +887,7 @@ export default function App() {
       </section>
 
       {/* ── о проекте ── */}
-      <section className="section wrap">
+      <section id="about" className="section wrap">
         <div className="about">
           <span className="eyebrow">{t.about_eyebrow}</span>
           <p className="about-text">{t.about_text}</p>
@@ -895,10 +904,44 @@ export default function App() {
       </section>
 
       <footer className="footer">
-        <Logo size={34} />
-        <p>{t.footer}</p>
-        <button className="link" onClick={showAdmin}>{t.nav_admin}</button>
-        <span>© {new Date().getFullYear()} funymems.cc</span>
+        <div className="foot-cols">
+          <div className="foot-col">
+            <h4>{t.foot_catalog}</h4>
+            <button className="foot-link" onClick={() => gotoCatalog('ru')}>{t.foot_ru}</button>
+            <button className="foot-link" onClick={() => gotoCatalog('kk')}>{t.foot_kk}</button>
+            <button className="foot-link" onClick={() => gotoCatalog('adult')}>{t.foot_18}</button>
+            <button className="foot-link" onClick={() => gotoCatalog('coll:fresh')}>{t.foot_new}</button>
+            <button className="foot-link" onClick={() => gotoCatalog('all')}>{t.foot_all}</button>
+          </div>
+
+          <div className="foot-col">
+            <h4>{t.foot_buyer}</h4>
+            <button className="foot-link" onClick={() => setOpenCart(true)}>{t.foot_cart}</button>
+            <a className="foot-link" href="#how">{t.foot_how}</a>
+            <a className="foot-link" href="#collections">{t.foot_coll}</a>
+            <a className="foot-link" href="#pay">{t.foot_pay}</a>
+            <a className="foot-link" href="#about">{t.foot_about}</a>
+          </div>
+
+          <div className="foot-col">
+            <h4>{t.foot_contact}</h4>
+            <a className="foot-link" href={`mailto:${CONTACTS.email}`}>{CONTACTS.email}</a>
+            <a className="foot-link hot" href={CONTACTS.whatsapp.href} target="_blank" rel="noreferrer">
+              WhatsApp {CONTACTS.whatsapp.label}
+            </a>
+            <a className="foot-link hot" href={CONTACTS.telegram.href} target="_blank" rel="noreferrer">
+              Telegram {CONTACTS.telegram.label}
+            </a>
+            <p className="foot-note">{t.foot_note}</p>
+          </div>
+        </div>
+
+        <div className="foot-bottom">
+          <Logo size={30} />
+          <p>{t.footer}</p>
+          <button className="link" onClick={showAdmin}>{t.nav_admin}</button>
+          <span>© {new Date().getFullYear()} funymems.cc</span>
+        </div>
       </footer>
 
       {/* Обёртка гасит клики, когда не открыто ничего: если анимация закрытия

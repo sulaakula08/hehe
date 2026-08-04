@@ -280,6 +280,14 @@ export default function Admin({
                           >
                             Новинка
                           </button>
+                          {/* Раздел 18+ в подвале и чип в каталоге берут этот флаг. */}
+                          <button
+                            className={`chip ${p.adult ? 'on' : ''}`}
+                            onClick={() => patch(p.id, { adult: !p.adult })}
+                            title="Принт с матом — раздел 18+"
+                          >
+                            18+
+                          </button>
                         </div>
                       </div>
                       <div className="arow-side">

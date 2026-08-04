@@ -57,6 +57,7 @@ export const PRODUCTS = [
   },
   {
     id: 'planirovanie',
+    adult: true,
     fresh: true,
     market: 'ru',
     base: 10900,
@@ -177,6 +178,7 @@ export const PRODUCTS = [
   },
   {
     id: 'napohu',
+    adult: true,
     market: 'ru',
     base: 10900,
     color: '#e9e7e2',
@@ -186,6 +188,7 @@ export const PRODUCTS = [
   },
   {
     id: 'rabota',
+    adult: true,
     market: 'ru',
     base: 10900,
     color: '#e9e7e2',
@@ -303,6 +306,16 @@ export const COLLECTIONS = [
   },
 ]
 
+/* ── Связь ──
+   ЗАПОЛНИТЬ: подставь реальные номер WhatsApp и ник Telegram. Ссылки
+   намеренно ведут на сами сервисы без чужого аккаунта, чтобы никого не
+   отправить не туда: wa.me/<номер без плюса>, t.me/<ник>. */
+export const CONTACTS = {
+  email: 'hello@funymems.cc',
+  whatsapp: { label: '+7 ___ ___ __ __', href: 'https://wa.me/' },
+  telegram: { label: '@funymems', href: 'https://t.me/' },
+}
+
 export const SIZES = ['S', 'M', 'L', 'XL', 'XXL']
 
 // Цена зависит от размера: большие требуют больше ткани.
@@ -359,6 +372,20 @@ export const T = {
     nav_shop: 'Каталог',
     nav_how: 'Как это работает',
     nav_wallet: 'Кошелёк',
+    foot_catalog: 'КАТАЛОГ ФУТБОЛОК',
+    foot_ru: 'На русском',
+    foot_kk: 'На казахском',
+    foot_18: '🔞 18+',
+    foot_all: 'Весь каталог',
+    foot_new: 'Новинки',
+    foot_buyer: 'ПОКУПАТЕЛЮ',
+    foot_pay: 'Оплата и доставка',
+    foot_cart: 'Корзина и оформление',
+    foot_how: 'Как это работает',
+    foot_coll: 'Коллекции',
+    foot_about: 'О проекте',
+    foot_contact: 'СВЯЗЬ',
+    foot_note: 'Если есть вопрос по заказу, оплате или размеру — напиши, ответим.',
     nav_admin: 'Админка',
     badge_new: 'НОВИНКА',
     shop_eyebrow: 'ОФИЦИАЛЬНЫЙ МАГАЗИН',
@@ -544,6 +571,20 @@ export const T = {
     nav_shop: 'Каталог',
     nav_how: 'Қалай жұмыс істейді',
     nav_wallet: 'Әмиян',
+    foot_catalog: 'ФУТБОЛКА КАТАЛОГЫ',
+    foot_ru: 'Орысша',
+    foot_kk: 'Қазақша',
+    foot_18: '🔞 18+',
+    foot_all: 'Толық каталог',
+    foot_new: 'Жаңалықтар',
+    foot_buyer: 'САТЫП АЛУШЫҒА',
+    foot_pay: 'Төлем және жеткізу',
+    foot_cart: 'Себет және рәсімдеу',
+    foot_how: 'Қалай жұмыс істейді',
+    foot_coll: 'Жинақтар',
+    foot_about: 'Жоба туралы',
+    foot_contact: 'БАЙЛАНЫС',
+    foot_note: 'Тапсырыс, төлем немесе өлшем бойынша сұрақ болса — жазыңыз.',
     nav_admin: 'Әкімші',
     badge_new: 'ЖАҢА',
     shop_eyebrow: 'РЕСМИ ДҮКЕН',
