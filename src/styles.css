@@ -55,13 +55,16 @@ html { color-scheme: light; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+/* overflow-x держим на html, а не на body: заданный на body, он делает сам
+   body скролл-контейнером (overflow-y при этом становится auto), и тогда
+   position:fixed отсчитывается от прокручиваемого блока — на телефоне нижняя
+   панель и кнопка «вверх» уезжали вместе со страницей. */
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
   background: var(--paper);
   color: var(--ink);
   font-family: 'Montserrat', system-ui, sans-serif;
-  overflow-x: hidden;
   /* лёгкая «бумажная» сетка */
   background-image:
     radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
