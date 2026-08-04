@@ -307,12 +307,11 @@ export const COLLECTIONS = [
 ]
 
 /* ── Связь ──
-   ЗАПОЛНИТЬ: подставь реальные номер WhatsApp и ник Telegram. Ссылки
-   намеренно ведут на сами сервисы без чужого аккаунта, чтобы никого не
-   отправить не туда: wa.me/<номер без плюса>, t.me/<ник>. */
+   ЗАПОЛНИТЬ: ник Telegram пока заглушка — ссылка ведёт на t.me без
+   аккаунта, чтобы никого не отправить в чужой чат. Подставь свой. */
 export const CONTACTS = {
   email: 'hello@funymems.cc',
-  whatsapp: { label: '+7 ___ ___ __ __', href: 'https://wa.me/' },
+  whatsapp: { label: '+7 707 702 60 08', href: 'https://wa.me/77077026008' },
   telegram: { label: '@funymems', href: 'https://t.me/' },
 }
 

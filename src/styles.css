@@ -394,7 +394,9 @@ a { color: inherit; text-decoration: none; }
 
 /* ── сердечко на карточке ── */
 .fav {
-  position: absolute; top: 12px; left: 12px; z-index: 3;
+  /* Плашки «новинка» и рынок висят на верхней кромке карточки, поэтому
+     сердце опускаем ниже их: на 12px оно накрывало «НОВИНКА». */
+  position: absolute; top: 21px; left: 12px; z-index: 3;
   width: 38px; height: 38px; border: var(--line); border-radius: 50%;
   background: var(--surface); cursor: pointer; font-size: 16px; line-height: 1;
   box-shadow: 2px 2px 0 var(--shadow-c); transition: transform .12s;
@@ -878,8 +880,12 @@ a { color: inherit; text-decoration: none; }
    нижняя панель на телефоне.
    ══════════════════════════════════════════════════════════════ */
 
-.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
-.section.wrap { padding-left: 20px; padding-right: 20px; }
+/* padding-inline, а не сокращение padding: сокращение обнуляло вертикальные
+   отступы у .section.wrap (правило .wrap идёт ниже .section и перебивало его),
+   из-за чего секции стыкались вплотную и карточка «О проекте» упиралась в
+   полосу «Как это работает». */
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; }
+.section.wrap { padding-inline: 20px; }
 
 /* Маленькая капслок-плашка над заголовками */
 .eyebrow {
@@ -1053,4 +1059,39 @@ a { color: inherit; text-decoration: none; }
   .tilegrid, .collgrid, .lifegrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .benefits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .statstrip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* ── витрина на телефоне: две карточки в ряд ──
+   При minmax(300px) на 375 px влезала одна карточка на всю ширину — товар
+   выглядел огромным, а листать приходилось долго. Две в ряд требуют сжать
+   всё внутри: подписи, чипы размеров и кнопку. */
+@media (max-width: 620px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+
+  .card { padding: 11px; gap: 8px; border-radius: 16px; box-shadow: 4px 4px 0 var(--shadow-c); }
+  .card h3 { font-size: 14.5px; line-height: 1.2; overflow-wrap: anywhere; }
+  /* Шутка-подзаголовок на 167 px занимала четыре строки и ломала ритм сетки. */
+  .card-sub { display: none; }
+  .card-media { padding: 2px; }
+
+  .sizes { gap: 4px; }
+  .sizes-label { display: none; }
+  .card .chip { padding: 4px 7px; font-size: 10.5px; border-width: 2px; }
+
+  .card-foot { flex-direction: column; align-items: stretch; gap: 7px; padding-top: 2px; }
+  .card .price { font-size: 16px; }
+  .card .btn-add { width: 100%; justify-content: center; padding: 9px 8px; font-size: 12.5px; }
+
+  .rarity { top: -9px; right: 8px; padding: 3px 7px; font-size: 9.5px; border-width: 2px; }
+  .rarity.is-new { left: 8px; }
+  .fav { width: 30px; height: 30px; top: 19px; left: 7px; }
+  .fav svg { width: 14px; height: 14px; }
+}
+
+/* Совсем узкие экраны: две карточки остаются, но чипы размеров переносим. */
+@media (max-width: 380px) {
+  .grid { gap: 9px; }
+  .card { padding: 9px; }
+  .card h3 { font-size: 13.5px; }
+  .card .chip { padding: 4px 6px; font-size: 10px; }
 }
