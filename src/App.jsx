@@ -315,7 +315,9 @@ export default function App() {
   const [paid, setPaid] = useState(null)     // экран «оплачено» поверх корзины
   const [flights, setFlights] = useState([]) // летящие в корзину копии товара
   const [cartStep, setCartStep] = useState('items')  // items → form
-  const cartBtnRef = useRef(null)
+  const [bottomTab, setBottomTab] = useState('home')  // подсветка нижней панели
+  const cartBtnRef = useRef(null)   // корзина в шапке
+  const cartBarRef = useRef(null)   // корзина в нижней панели (телефон)
   const t = T[lang]
 
   // Товар ищем сначала в редактируемом каталоге, потом в дефолтах — чтобы
@@ -366,8 +368,14 @@ export default function App() {
 
   /** Запускает копию товара из точки from к иконке корзины. */
   const launchFlight = (product, from) => {
-    const btn = cartBtnRef.current?.getBoundingClientRect()
-    // Нет иконки (узкий экран) или не дали прямоугольник — просто без полёта.
+    // На телефоне шапка уезжает вверх, зато снизу висит панель — целимся в ту
+    // корзину, которая сейчас в поле зрения, иначе копия летела за экран.
+    const seen = (el) => {
+      const r = el?.getBoundingClientRect()
+      return r && r.width > 0 && r.bottom > 0 && r.top < window.innerHeight ? r : null
+    }
+    const btn = seen(cartBarRef.current) || seen(cartBtnRef.current)
+    // Нет видимой иконки или не дали прямоугольник — просто без полёта.
     if (!btn || !from) return
     const id = `${Date.now()}-${Math.random()}`
     setFlights((f) => [...f, {
@@ -1134,15 +1142,38 @@ export default function App() {
 
       {/* ── нижняя панель (только телефон), как у образца ── */}
       <nav className="bottombar">
-        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+        <motion.button
+          className={!openCart && bottomTab === 'home' ? 'on' : ''}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => {
+            setBottomTab('home')
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
+        >
           <Icon name="outline" size={19} /><span>{t.nav_home}</span>
-        </button>
-        <button onClick={() => gotoCatalog('all')}>
+        </motion.button>
+
+        <motion.button
+          className={!openCart && bottomTab === 'catalog' ? 'on' : ''}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => { setBottomTab('catalog'); gotoCatalog('all') }}
+        >
           <Icon name="shirt" size={19} /><span>{t.nav_shop}</span>
-        </button>
-        <button className={count ? 'hot' : ''} onClick={() => setOpenCart(true)}>
+        </motion.button>
+
+        {/* Корзина подсвечивается, пока шторка открыта, и подпрыгивает,
+            когда меняется количество — на телефоне счётчик в шапке не виден. */}
+        <motion.button
+          ref={cartBarRef}
+          className={openCart ? 'on' : ''}
+          whileTap={{ scale: 0.9 }}
+          animate={count ? { scale: [1, 1.16, 0.97, 1] } : {}}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          key={count}
+          onClick={() => setOpenCart(true)}
+        >
           <Icon name="cart" size={19} /><span>{t.cart}{count ? ` · ${count}` : ''}</span>
-        </button>
+        </motion.button>
       </nav>
 
       {/* ── тост ── */}
