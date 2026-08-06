@@ -10,7 +10,7 @@ import Card from './components/Card.jsx'
 import CatalogPage from './components/CatalogPage.jsx'
 import CartPage from './components/CartPage.jsx'
 import Privacy from './components/Privacy.jsx'
-import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, T, fmt, DEFAULT_SETTINGS, COLLECTIONS, CONTACTS } from './data.js'
+import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, CATALOG_VER, T, fmt, DEFAULT_SETTINGS, COLLECTIONS, CONTACTS } from './data.js'
 
 const load = (k, d) => {
   try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch { return d }
@@ -201,8 +201,15 @@ export default function App() {
   // Каталог, размерная наценка и промокоды редактируются из админки и живут
   // в localStorage. Каталог инициализируется дефолтами из data.js.
   const [catalog, setCatalog] = useState(() => {
+    // Смена версии каталога (новые цены/размеры) сбрасывает сохранённый
+    // каталог на дефолт — заодно уходят дубли, накопленные в localStorage.
+    if (load('hehe.catalogVer', 0) !== CATALOG_VER) return PRODUCTS
     const saved = load('hehe.catalog', null)
     if (!saved) return PRODUCTS
+    // Страховка от дублей по id (могли накопиться при правках в админке).
+    const seen = new Set()
+    const uniq = saved.filter((p) => p && !seen.has(p.id) && seen.add(p.id))
+    if (uniq.length !== saved.length) return uniq.length ? uniq : PRODUCTS
     // Каталог лежит в localStorage, поэтому новинки из data.js сами не появятся
     // у того, кто уже заходил. Дописываем их в начало — но только те, которых
     // витрина ещё не показывала: иначе удалённые из админки товары возвращались
@@ -224,7 +231,8 @@ export default function App() {
     })
     return [...added, ...patched]
   })
-  const [sizeExtra, setSizeExtra] = useState(() => load('hehe.sizeExtra', SIZE_EXTRA))
+  const [sizeExtra, setSizeExtra] = useState(() =>
+    load('hehe.catalogVer', 0) !== CATALOG_VER ? SIZE_EXTRA : load('hehe.sizeExtra', SIZE_EXTRA))
   const [promos, setPromos] = useState(() => load('hehe.promos', []))
   const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS, ...load('hehe.settings', {}) }))
   const [promo, setPromo] = useState(null)   // применённый в корзине
@@ -265,6 +273,7 @@ export default function App() {
   // Запоминаем, какие товары из data.js витрина уже показывала.
   useEffect(() => save('hehe.knownIds', PRODUCTS.map((p) => p.id)), [])
   useEffect(() => save('hehe.sizeExtra', sizeExtra), [sizeExtra])
+  useEffect(() => save('hehe.catalogVer', CATALOG_VER), [])
   useEffect(() => save('hehe.promos', promos), [promos])
   useEffect(() => save('hehe.customer', customer), [customer])
   useEffect(() => save('hehe.settings', settings), [settings])

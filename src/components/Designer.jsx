@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Tshirt, { PRINT_ZONE, TEXT_WIDTH } from './Tshirt.jsx'
 import Icon from './Icon.jsx'
-import { CUSTOM_COLORS, INK_COLORS, FONTS, TEMPLATES, CUSTOM_PRICE, SIZES, fmt } from '../data.js'
+import { CUSTOM_COLORS, INK_COLORS, FONTS, TEMPLATES, CUSTOM_PRICE, SIZES, SIZE_LABELS, fmt } from '../data.js'
 
 const MAX_FILE = 8 * 1024 * 1024   // 8 МБ до сжатия
 const MAX_SIDE = 420               // во столько ужимаем перед сохранением
@@ -85,7 +85,7 @@ function Slider({ label, value, min, max, step, onInput, onStart }) {
 export default function Designer({ t, lang, onClose, onAdd, onToast, price = CUSTOM_PRICE }) {
   const [d, setD] = useState(START)
   const [tab, setTab] = useState('text')
-  const [size, setSize] = useState('M')
+  const [size, setSize] = useState('XL')
   const [busy, setBusy] = useState(false)
   const fileRef = useRef(null)
 
@@ -383,7 +383,7 @@ export default function Designer({ t, lang, onClose, onAdd, onToast, price = CUS
                 <span>{t.size}</span>
                 <div className="sizes">
                   {SIZES.map((s) => (
-                    <button key={s} className={`chip ${size === s ? 'on' : ''}`} onClick={() => setSize(s)}>{s}</button>
+                    <button key={s} className={`chip ${size === s ? 'on' : ''}`} onClick={() => setSize(s)}>{SIZE_LABELS[s] ?? s}</button>
                   ))}
                 </div>
               </div>

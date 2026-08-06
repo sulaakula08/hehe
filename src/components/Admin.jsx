@@ -5,7 +5,7 @@ import { PRODUCTS, MARKETS, SIZES, DEFAULT_SETTINGS, ADMIN_PASS, fmt, asset } fr
 
 const EMPTY = {
   ruTitle: '', ruSub: '', kkTitle: '', kkSub: '',
-  market: 'ru', base: 9900, white: '', black: '', fresh: true, adult: false,
+  market: 'ru', base: 15900, white: '', black: '', fresh: true, adult: false,
 }
 
 /**
@@ -164,7 +164,7 @@ export default function Admin({
   const setS = (upd) => setSettings((s) => ({ ...s, ...upd }))
   const resetDemo = () => {
     setCatalog(PRODUCTS)
-    setSizeExtra({ S: 0, M: 0, L: 0, XL: 1000, XXL: 1500 })
+    setSizeExtra({ XL: 0, XXL: 0, OVERSIZE: 3000 })
     setSettings(DEFAULT_SETTINGS)
     setOpenRow(null)
     onToast('Каталог и цены сброшены')
@@ -485,7 +485,7 @@ export default function Admin({
               </label>
 
               <p className="muted">
-                Пример: базовая {fmt(9900)} → XL {fmt(9900 + (sizeExtra.XL ?? 0))} → XXL {fmt(9900 + (sizeExtra.XXL ?? 0))}
+                Пример: XL/XXL {fmt(15900)} → ОВЕРСАЙЗ {fmt(15900 + (sizeExtra.OVERSIZE ?? 0))}
               </p>
             </div>
           )}

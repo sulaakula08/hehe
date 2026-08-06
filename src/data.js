@@ -19,7 +19,7 @@ export const PRODUCTS = [
     id: 'shashlyk',
     fresh: true,
     market: 'ru',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/shashlyk-w.png', black: '/tees/shashlyk-b.png' },
     ru: { title: 'Шашлык не жена', sub: 'Смело бери 3–4 штуки' },
@@ -29,7 +29,7 @@ export const PRODUCTS = [
     id: 'shashlykkz',
     fresh: true,
     market: 'kk',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/shashlykkz-w.png', black: '/tees/shashlykkz-b.png' },
     ru: { title: 'Шашлық қатын емес', sub: 'Не бойся, бери 3–4' },
@@ -39,7 +39,7 @@ export const PRODUCTS = [
     id: 'pyanyi',
     fresh: true,
     market: 'ru',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/pyanyi-w.png', black: '/tees/pyanyi-b.png' },
     ru: { title: 'Походу ты уже пьяный', sub: 'Если надпись двоится — значит да' },
@@ -49,7 +49,7 @@ export const PRODUCTS = [
     id: 'toiyp',
     fresh: true,
     market: 'kk',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/toiyp-w.png', black: '/tees/toiyp-b.png' },
     ru: { title: 'Тойып алған сияқтысың', sub: 'Казахская версия «ты уже пьяный»' },
@@ -60,7 +60,7 @@ export const PRODUCTS = [
     adult: true,
     fresh: true,
     market: 'ru',
-    base: 10900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/planirovanie-w.png', black: '/tees/planirovanie-b.png' },
     ru: { title: 'Грамотное планирование', sub: 'Запланировал ничего не делать — всё успел' },
@@ -69,7 +69,7 @@ export const PRODUCTS = [
   {
     id: 'arak',
     market: 'kk',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/arak-w.png', black: '/tees/arak-b.png' },
     ru: { title: 'Арақ ішу', sub: 'Бухать — это не спорт' },
@@ -78,7 +78,7 @@ export const PRODUCTS = [
   {
     id: 'magan40',
     market: 'kk',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/magan40-w.png', black: '/tees/magan40-b.png' },
     ru: { title: 'Маған 40 емес', sub: 'Мне не 40' },
@@ -87,7 +87,7 @@ export const PRODUCTS = [
   {
     id: 'eskifoto',
     market: 'kk',
-    base: 8900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/eskifoto-w.png', black: '/tees/eskifoto-b.png' },
     ru: { title: 'Менің ескі фоткам', sub: 'Моя старая фотка' },
@@ -96,7 +96,7 @@ export const PRODUCTS = [
   {
     id: 'sagat',
     market: 'kk',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/sagat-w.png', black: '/tees/sagat-b.png' },
     ru: { title: 'Сағатым тұрып қалды', sub: 'Мои часы встали' },
@@ -105,7 +105,7 @@ export const PRODUCTS = [
   {
     id: 'kyzym',
     market: 'kk',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/kyzym-w.png', black: '/tees/kyzym-b.png' },
     ru: { title: 'Қызым жоқ', sub: 'У меня нет дочки' },
@@ -114,7 +114,7 @@ export const PRODUCTS = [
   {
     id: 'buhat',
     market: 'ru',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/buhat-w.png', black: '/tees/buhat-b.png' },
     ru: { title: 'Бухать!', sub: 'Это вам не спортом заниматься' },
@@ -125,7 +125,7 @@ export const PRODUCTS = [
     id: 'buhatcolor',
     fresh: true,
     market: 'ru',
-    base: 10900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/buhatcolor-w.png', black: '/tees/buhatcolor-b.png' },
     ru: { title: 'Бухать! в цвете', sub: 'Тот же мем, только кислотный' },
@@ -134,7 +134,7 @@ export const PRODUCTS = [
   {
     id: 'buhatsport',
     market: 'ru',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/buhatsport-w.png', black: '/tees/buhatsport-b.png' },
     ru: { title: 'Бухать — не спорт', sub: 'Тут здоровье нужно' },
@@ -143,7 +143,7 @@ export const PRODUCTS = [
   {
     id: 'volosy',
     market: 'ru',
-    base: 8900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/volosy-w.png', black: '/tees/volosy-b.png' },
     ru: { title: 'Волосы', sub: 'Были. Ушли. Не вернулись.' },
@@ -152,7 +152,7 @@ export const PRODUCTS = [
   {
     id: 'luchshe',
     market: 'ru',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/luchshe-w.png', black: '/tees/luchshe-b.png' },
     ru: { title: 'Лучше некуда', sub: 'Сарказм в чистом виде' },
@@ -161,7 +161,7 @@ export const PRODUCTS = [
   {
     id: 'ne40',
     market: 'ru',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/ne40-w.png', black: '/tees/ne40-b.png' },
     ru: { title: 'Мне не 40', sub: 'Мне восемнадцать с опытом' },
@@ -170,7 +170,7 @@ export const PRODUCTS = [
   {
     id: 'starayafoto',
     market: 'ru',
-    base: 8900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/starayafoto-w.png', black: '/tees/starayafoto-b.png' },
     ru: { title: 'Моя старая фотка', sub: 'Раньше было лучше' },
@@ -180,7 +180,7 @@ export const PRODUCTS = [
     id: 'napohu',
     adult: true,
     market: 'ru',
-    base: 10900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/napohu-w.png', black: '/tees/napohu-b.png' },
     ru: { title: 'На всё по…', sub: 'Философия спокойствия' },
@@ -190,7 +190,7 @@ export const PRODUCTS = [
     id: 'rabota',
     adult: true,
     market: 'ru',
-    base: 10900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/rabota-w.png', black: '/tees/rabota-b.png' },
     ru: { title: 'На работе…', sub: 'Понедельник как он есть' },
@@ -199,7 +199,7 @@ export const PRODUCTS = [
   {
     id: 'perestat',
     market: 'ru',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/perestat-w.png', black: '/tees/perestat-b.png' },
     ru: { title: 'Перестать выёживаться', sub: 'Список дел на год' },
@@ -208,7 +208,7 @@ export const PRODUCTS = [
   {
     id: 'pohudenie',
     market: 'ru',
-    base: 8900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/pohudenie-w.png', black: '/tees/pohudenie-b.png' },
     ru: { title: 'Похудение', sub: 'Начну с понедельника' },
@@ -217,7 +217,7 @@ export const PRODUCTS = [
   {
     id: 'pochemuinet',
     market: 'ru',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/pochemuinet-w.png', black: '/tees/pochemuinet-b.png' },
     ru: { title: 'Почему и нет', sub: 'Ответ на любой вопрос' },
@@ -226,7 +226,7 @@ export const PRODUCTS = [
   {
     id: 'netdevushki',
     market: 'ru',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/netdevushki-w.png', black: '/tees/netdevushki-b.png' },
     ru: { title: 'Почему нет девушки', sub: 'Список причин на спине' },
@@ -235,7 +235,7 @@ export const PRODUCTS = [
   {
     id: 'robin',
     market: 'ru',
-    base: 11900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/robin-w.png', black: '/tees/robin-b.png' },
     ru: { title: 'Робин Гуд', sub: 'Отбирал у богатых. Уважаем.' },
@@ -244,7 +244,7 @@ export const PRODUCTS = [
   {
     id: 'skolzkiy',
     market: 'ru',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/skolzkiy-w.png', black: '/tees/skolzkiy-b.png' },
     ru: { title: 'Скользкий тип', sub: 'Выкрутится из любой ситуации' },
@@ -253,7 +253,7 @@ export const PRODUCTS = [
   {
     id: 'chasy',
     market: 'ru',
-    base: 9900,
+    base: 15900,
     color: '#e9e7e2',
     photos: { white: '/tees/chasy-w.png', black: '/tees/chasy-b.png' },
     ru: { title: 'Часы встали', sub: 'Опять не моя вина' },
@@ -315,10 +315,16 @@ export const CONTACTS = {
   telegram: { label: '@funymems', href: 'https://t.me/' },
 }
 
-export const SIZES = ['S', 'M', 'L', 'XL', 'XXL']
+export const SIZES = ['XL', 'XXL', 'OVERSIZE']
+export const SIZE_LABELS = { XL: 'XL', XXL: 'XXL', OVERSIZE: 'Оверсайз' }
+
+// Версия каталога/цен. Бампаем — и сохранённый в localStorage каталог
+// (со старыми ценами, размерами и дублями) один раз сбрасывается на дефолт.
+export const CATALOG_VER = 2
 
 // Цена зависит от размера: большие требуют больше ткани.
-export const SIZE_EXTRA = { S: 0, M: 0, L: 0, XL: 1000, XXL: 1500 }
+// XL и XXL — 15 900 (базовая), ОВЕРСАЙЗ — 18 900.
+export const SIZE_EXTRA = { XL: 0, XXL: 0, OVERSIZE: 3000 }
 export const priceFor = (product, size) => (product.base ?? 0) + (SIZE_EXTRA[size] ?? 0)
 
 /* ── Конструктор ── */

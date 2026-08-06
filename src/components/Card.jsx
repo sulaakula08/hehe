@@ -2,12 +2,12 @@ import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Tshirt from './Tshirt.jsx'
 import Icon from './Icon.jsx'
-import { MARKETS, SIZES, fmt } from '../data.js'
+import { MARKETS, SIZES, SIZE_LABELS, fmt } from '../data.js'
 
 /* ─────────────── карточка товара ─────────────── */
 export default function Card({ p, lang, t, onAdd, isFav, onFav, priceOf, onZoom }) {
   const [hover, setHover] = useState(false)
-  const [size, setSize] = useState('M')
+  const [size, setSize] = useState('XL')
   const [color, setColor] = useState('black')
   const mediaRef = useRef(null)
   const m = MARKETS[p.market]
@@ -77,7 +77,7 @@ export default function Card({ p, lang, t, onAdd, isFav, onFav, priceOf, onZoom 
         <span className="sizes-label">{t.size}</span>
         {SIZES.map((s) => (
           <button key={s} className={`chip ${size === s ? 'on' : ''}`} onClick={() => setSize(s)}>
-            {s}
+            {SIZE_LABELS[s] ?? s}
           </button>
         ))}
       </div>

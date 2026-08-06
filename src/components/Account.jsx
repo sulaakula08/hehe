@@ -125,10 +125,10 @@ export default function Account({
                   </div>
                   <div className="line-info">
                     <b>{p[lang].title}</b>
-                    <span>{fmt(priceFor(p, 'M'))}</span>
+                    <span>{fmt(priceFor(p, 'XL'))}</span>
                     <button className="link" onClick={() => onToggleFav(p.id)}>{t.remove}</button>
                   </div>
-                  <button className="btn btn-add" onClick={() => { onAddToCart(p, 'M'); onToast(t.added) }}>
+                  <button className="btn btn-add" onClick={() => { onAddToCart(p, 'XL'); onToast(t.added) }}>
                     {t.add}
                   </button>
                 </div>
