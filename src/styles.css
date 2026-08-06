@@ -1244,3 +1244,23 @@ a { color: inherit; text-decoration: none; }
   .zoomview-tee { width: 88vw; max-height: 62vh; }
   .zoomview-tee svg, .zoomview-tee img { max-height: 62vh; }
 }
+
+/* ── плавающий помощник ── */
+.help { position: fixed; left: 18px; bottom: 18px; z-index: 70; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.help-btn {
+  width: 54px; height: 54px; border-radius: 50%; border: var(--line);
+  background: var(--hot); color: #fff; cursor: pointer; display: grid; place-items: center;
+  box-shadow: var(--shadow);
+}
+.help-card {
+  width: 240px; background: var(--surface); color: var(--ink);
+  border: var(--line); border-radius: 16px; box-shadow: var(--shadow-lg);
+  padding: 16px; display: flex; flex-direction: column; gap: 8px;
+}
+.help-card b { font-size: 16px; }
+.help-card p { font-size: 13px; margin-bottom: 4px; }
+.help-card .btn { justify-content: center; }
+@media (max-width: 640px) {
+  /* над нижней панелью на телефоне */
+  .help { bottom: 78px; left: 14px; }
+}

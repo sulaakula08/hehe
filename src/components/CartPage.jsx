@@ -94,10 +94,10 @@ export default function CartPage({
                 <input value={customer.name} onChange={set('name')} /></label>
               <label className="afield"><span>{t.f_phone}</span>
                 <input inputMode="tel" value={customer.phone} onChange={set('phone')} /></label>
+              <label className="afield"><span>WhatsApp</span>
+                <input inputMode="tel" placeholder="+7…" value={customer.whatsapp || ''} onChange={set('whatsapp')} /></label>
               <label className="afield"><span>Telegram</span>
                 <input placeholder="@ник" value={customer.telegram || ''} onChange={set('telegram')} /></label>
-              <label className="afield"><span>Email</span>
-                <input type="email" value={customer.email || ''} onChange={set('email')} /></label>
             </div>
 
             <h3>{t.promo_title}</h3>

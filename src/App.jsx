@@ -187,6 +187,41 @@ function Countdown({ t }) {
   )
 }
 
+/* ─────────────── плавающий помощник ─────────────── */
+function HelpWidget({ t }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="help">
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="help-card"
+            initial={{ opacity: 0, y: 12, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.95 }}
+          >
+            <b>{t.help_q}</b>
+            <p className="muted">{t.help_d}</p>
+            <a className="btn btn-solid full" href={CONTACTS.whatsapp.href} target="_blank" rel="noreferrer">
+              WhatsApp
+            </a>
+            <a className="btn full" href={CONTACTS.telegram.href} target="_blank" rel="noreferrer">
+              Telegram
+            </a>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <motion.button
+        className="help-btn" whileTap={{ scale: 0.9 }}
+        onClick={() => setOpen((v) => !v)}
+        aria-label={t.help_q} title={t.help_q}
+      >
+        <Icon name={open ? 'close' : 'chat'} size={22} />
+      </motion.button>
+    </div>
+  )
+}
+
 /* ─────────────── приложение ─────────────── */
 export default function App() {
   const [lang, setLang] = useState(() => load('hehe.lang', 'ru'))
@@ -1032,6 +1067,9 @@ export default function App() {
           />
         ))}
       </div>
+
+      {/* ── плавающий помощник «нужна помощь?» ── */}
+      <HelpWidget t={t} />
 
       {/* ── кнопка «вверх»: на телефоне страницы длинные ── */}
       <AnimatePresence>

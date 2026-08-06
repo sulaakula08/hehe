@@ -528,6 +528,8 @@ export default function Admin({
                   {o.customer?.name && (
                     <div className="acust">
                       <b>{o.customer.name}</b> · {o.customer.phone}
+                      {(o.customer.whatsapp || o.customer.telegram) &&
+                        <span className="muted"> · {[o.customer.whatsapp && `WA ${o.customer.whatsapp}`, o.customer.telegram && `TG ${o.customer.telegram}`].filter(Boolean).join(', ')}</span>}
                       {(o.customer.city || o.customer.address) &&
                         <span className="muted"> · {[o.customer.city, o.customer.address].filter(Boolean).join(', ')}</span>}
                     </div>
