@@ -2,19 +2,19 @@ import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Tshirt from './Tshirt.jsx'
 import Icon from './Icon.jsx'
-import { MARKETS, SIZES, SIZE_LABELS, fmt } from '../data.js'
+import { MARKETS, fmt } from '../data.js'
 
-/* ─────────────── карточка товара ─────────────── */
-export default function Card({ p, lang, t, onAdd, isFav, onFav, priceOf, onZoom }) {
+/**
+ * Карточка в сетке: фото, название и цена. Выбор кроя, цвета, размера и
+ * количества переехал на страницу товара — на телефоне карточка шириной
+ * ~170px не вмещала пять рядов чипов, и попасть по ним пальцем было тяжело.
+ * Тап по фото по-прежнему увеличивает саму футболку, а не карточку.
+ */
+export default function Card({ p, lang, t, priceOf, isFav, onFav, onZoom, onOpen }) {
   const [hover, setHover] = useState(false)
-  const [size, setSize] = useState('XL')
-  const [color, setColor] = useState('black')
   const mediaRef = useRef(null)
   const m = MARKETS[p.market]
-  const shown = { ...p, photo: p.photos[color] }
-
-  // Отдаём наверх прямоугольник картинки: от него полетит копия в корзину.
-  const add = () => onAdd(p, size, color, mediaRef.current?.getBoundingClientRect())
+  const shown = { ...p, photo: p.photos.black }
 
   return (
     <motion.article
@@ -61,31 +61,18 @@ export default function Card({ p, lang, t, onAdd, isFav, onFav, priceOf, onZoom 
         <span className="zoom-hint"><Icon name="plus" size={13} /></span>
       </div>
 
-      <h3>{p[lang].title}</h3>
+      <h3 className="card-title" role="button" tabIndex={0}
+        onClick={() => onOpen?.(p)}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onOpen?.(p))}
+      >
+        {p[lang].title}
+      </h3>
       <p className="card-sub">{p[lang].sub}</p>
 
-      <div className="sizes">
-        <span className="sizes-label">{t.color}</span>
-        {[['black', t.c_black], ['white', t.c_white]].map(([c, label]) => (
-          <button key={c} className={`chip ${color === c ? 'on' : ''}`} onClick={() => setColor(c)}>
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="sizes">
-        <span className="sizes-label">{t.size}</span>
-        {SIZES.map((s) => (
-          <button key={s} className={`chip ${size === s ? 'on' : ''}`} onClick={() => setSize(s)}>
-            {SIZE_LABELS[s] ?? s}
-          </button>
-        ))}
-      </div>
-
       <div className="card-foot">
-        <span className="price">{fmt(priceOf(p, size))}</span>
-        <motion.button className="btn btn-add" onClick={add} whileTap={{ scale: 0.88 }}>
-          {t.add}
+        <span className="price">{fmt(priceOf(p, 'XL'))}</span>
+        <motion.button className="btn btn-add" onClick={() => onOpen?.(p)} whileTap={{ scale: 0.88 }}>
+          {t.pr_choose}
         </motion.button>
       </div>
     </motion.article>

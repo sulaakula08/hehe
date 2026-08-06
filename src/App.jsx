@@ -10,7 +10,9 @@ import Card from './components/Card.jsx'
 import CatalogPage from './components/CatalogPage.jsx'
 import CartPage from './components/CartPage.jsx'
 import Privacy from './components/Privacy.jsx'
-import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, CATALOG_VER, T, fmt, DEFAULT_SETTINGS, COLLECTIONS, CONTACTS } from './data.js'
+import ProductPage from './components/ProductPage.jsx'
+import InfoPage from './components/InfoPage.jsx'
+import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, FITS, CATALOG_VER, T, fmt, DEFAULT_SETTINGS, COLLECTIONS, CONTACTS } from './data.js'
 
 const load = (k, d) => {
   try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch { return d }
@@ -376,13 +378,17 @@ export default function App() {
     }])
   }
 
-  const addToCart = (p, size, color = 'black', from) => {
+  // fit и qty приходят со страницы товара; из быстрых мест (избранное) —
+  // значения по умолчанию, поэтому старые вызовы работают без изменений.
+  const addToCart = (p, size, color = 'black', from, opts = {}) => {
+    const fit = opts.fit ?? 'men'
+    const add = Math.max(1, opts.qty ?? 1)
     launchFlight({ ...p, photo: p.photos?.[color] }, from)
     setCart((c) => {
-      const key = p.id + size + color
+      const key = p.id + size + color + fit
       const found = c.find((i) => i.key === key)
-      if (found) return c.map((i) => (i.key === key ? { ...i, qty: i.qty + 1 } : i))
-      return [...c, { key, id: p.id, size, color, qty: 1 }]
+      if (found) return c.map((i) => (i.key === key ? { ...i, qty: i.qty + add } : i))
+      return [...c, { key, id: p.id, size, color, fit, qty: add }]
     })
   }
 
@@ -415,9 +421,10 @@ export default function App() {
     if (!p) return { price: 0, title: '—', product: { id: i.id, color: '#ccc', ru: {}, kk: {} } }
     const color = i.color ?? 'black'
     const cLabel = color === 'white' ? t.c_white : t.c_black
+    const fLabel = FITS[i.fit ?? 'men']?.[lang]
     return {
       price: priceOf(p, i.size),
-      title: `${p[lang].title} · ${cLabel}`,
+      title: `${p[lang].title} · ${cLabel}${fLabel ? ` · ${fLabel}` : ''}`,
       product: { ...p, photo: p.photos[color] },
     }
   }
@@ -535,6 +542,14 @@ export default function App() {
   }
   const page = PAGES[route]
   const heroTee = findProduct('shashlyk') || visible[0] || PRODUCTS[0]
+
+  // Страница товара: /product/<id>. Похожие — из того же рынка, без самого товара.
+  const productId = route.startsWith('/product/') ? route.slice('/product/'.length) : null
+  const openProduct = (p) => navigate('/product/' + p.id)
+  const current = productId ? findProduct(productId) : null
+  const similar = current
+    ? visible.filter((x) => x.id !== current.id && x.market === current.market).slice(0, 4)
+    : []
 
   const showAdmin = () => {
     window.location.hash = '#admin'
@@ -802,7 +817,7 @@ export default function App() {
             <Card
               key={`pop-${pr.id}`} p={pr} lang={lang} t={t}
               onAdd={addToCart} priceOf={priceOf}
-              isFav={favorites.includes(pr.id)} onFav={onFav} onZoom={setZoomed}
+              isFav={favorites.includes(pr.id)} onFav={onFav} onZoom={setZoomed} onOpen={openProduct}
             />
           ))}
         </div>
@@ -926,7 +941,7 @@ export default function App() {
       {page && (
         <CatalogPage
           t={t} lang={lang} title={page.title} desc={page.desc} products={page.items}
-          onAdd={addToCart} priceOf={priceOf} favorites={favorites} onFav={onFav} onZoom={setZoomed}
+          onAdd={addToCart} priceOf={priceOf} favorites={favorites} onFav={onFav} onZoom={setZoomed} onOpen={openProduct}
           onDesigner={() => setOpenDesigner(true)} onHome={() => navigate('/')}
         />
       )}
@@ -944,11 +959,36 @@ export default function App() {
           upsell={visible.filter((x) => !cart.some((i) => i.id === x.id)).slice(0, 4)}
           onAdd={addToCart} priceOf={priceOf} favorites={favorites} onFav={onFav}
           onHome={() => navigate('/')} onCatalog={() => navigate('/catalog')}
-          onPrivacy={() => navigate('/privacy')} onZoom={setZoomed}
+          onPrivacy={() => navigate('/privacy')} onZoom={setZoomed} onOpen={openProduct}
+        />
+      )}
+
+      {/* ── страница товара: крой, цвет, размер, количество ── */}
+      {productId && (
+        <ProductPage
+          t={t} lang={lang} product={current} similar={similar}
+          onAdd={addToCart} priceOf={priceOf}
+          favorites={favorites} onFav={onFav} onZoom={setZoomed}
+          onHome={() => navigate('/')} onCatalog={() => navigate('/catalog')}
+          onOpen={openProduct} onCart={() => navigate('/cart')} onPay={() => navigate('/pay')}
         />
       )}
 
       {route === '/privacy' && <Privacy t={t} onHome={() => navigate('/')} />}
+
+      {route === '/pay' && (
+        <InfoPage
+          t={t} title={t.pd_title} lead={t.pd_lead} blocks={t.pd_blocks} note={t.pd_note}
+          onHome={() => navigate('/')}
+        />
+      )}
+
+      {route === '/about' && (
+        <InfoPage
+          t={t} title={t.ab_title} lead={t.ab_lead} blocks={t.ab_blocks} note={t.ab_note}
+          onHome={() => navigate('/')}
+        />
+      )}
 
       <footer className="footer">
         <div className="foot-cols">
@@ -966,8 +1006,8 @@ export default function App() {
             <button className="foot-link" onClick={() => navigate('/cart')}>{t.foot_cart}</button>
             <a className="foot-link" href="#how">{t.foot_how}</a>
             <a className="foot-link" href="#collections">{t.foot_coll}</a>
-            <a className="foot-link" href="#pay">{t.foot_pay}</a>
-            <a className="foot-link" href="#/">{t.foot_about}</a>
+            <button className="foot-link" onClick={() => navigate('/pay')}>{t.foot_pay}</button>
+            <button className="foot-link" onClick={() => navigate('/about')}>{t.foot_about}</button>
             <button className="foot-link" onClick={() => navigate('/privacy')}>{t.pp_title}</button>
           </div>
 

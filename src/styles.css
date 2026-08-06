@@ -1280,3 +1280,62 @@ a { color: inherit; text-decoration: none; }
   /* над нижней панелью на телефоне */
   .help { bottom: 78px; left: 14px; }
 }
+
+/* ── страница товара ── */
+.pdp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+.pdp-media { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 12px; }
+.pdp-photo {
+  border: var(--line); border-radius: var(--r); padding: 10px;
+  cursor: zoom-in; position: relative; background: var(--surface);
+}
+.pdp-photo .tee { width: 100%; }
+.pdp-thumbs { display: flex; gap: 10px; }
+.pdp-thumb {
+  width: 74px; height: 84px; border: 2px solid var(--ink); border-radius: 12px;
+  background: var(--surface); cursor: pointer; padding: 4px; overflow: hidden;
+}
+.pdp-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.pdp-thumb.on { box-shadow: 0 0 0 3px var(--acid); }
+
+.pdp-info { display: flex; flex-direction: column; gap: 14px; }
+.pdp-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.pdp-badges .rarity { position: static; rotate: none; }
+.pdp-title { font-family: 'Montserrat', system-ui, sans-serif; font-size: clamp(24px, 3.4vw, 38px); line-height: 1.1; }
+.pdp-sub { opacity: .7; }
+.pdp-price { font-family: 'Montserrat'; font-size: 30px; font-weight: 800; }
+
+.pdp-opt { display: flex; flex-direction: column; gap: 7px; }
+.pdp-opt-label { font-size: 12px; font-weight: 700; opacity: .6; letter-spacing: .04em; text-transform: uppercase; }
+.pdp-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.dot-color { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--ink); display: inline-block; }
+
+.pdp-qty { display: inline-flex; align-items: center; gap: 4px; border: 2px solid var(--ink); border-radius: 999px; padding: 4px; width: fit-content; }
+.pdp-qty button {
+  width: 38px; height: 38px; border: 0; border-radius: 50%; background: transparent;
+  color: var(--ink); cursor: pointer; display: grid; place-items: center;
+}
+.pdp-qty button:hover { background: var(--tint); }
+.pdp-qty > b { min-width: 34px; text-align: center; font-family: 'Montserrat'; font-size: 17px; }
+
+.pdp-total { font-size: 15px; }
+.pdp-total b { font-family: 'Montserrat'; }
+.pdp-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.pdp-fav { padding: 14px; }
+.pdp-fav.on { color: var(--hot); }
+
+.pdp-facts { border-top: 2px dashed rgba(128,128,128,.35); padding-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.pdp-facts h4 { font-size: 14px; margin-top: 6px; }
+.pdp-facts ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+.pdp-facts li { font-size: 14px; opacity: .75; }
+.pdp-facts .link { text-align: left; font-size: 14px; }
+
+.card-title { cursor: pointer; }
+.card-title:hover { color: var(--hot); }
+.doc-contacts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+.doc-note { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; opacity: .6; margin-top: 14px; }
+
+@media (max-width: 860px) {
+  .pdp { grid-template-columns: 1fr; gap: 20px; }
+  .pdp-media { position: static; }
+  .pdp-actions .btn { flex: 1 1 auto; justify-content: center; }
+}
