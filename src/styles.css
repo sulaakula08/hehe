@@ -702,7 +702,18 @@ a { color: inherit; text-decoration: none; }
 .astat i { font-size: 11px; opacity: .45; font-style: normal; }
 
 .atop { list-style: none; display: flex; flex-direction: column; gap: 4px; }
-.atop li { display: flex; justify-content: space-between; font-size: 14px; border-bottom: 1px dashed rgba(128,128,128,.3); padding: 5px 0; }
+.atop li { display: flex; align-items: center; gap: 10px; justify-content: space-between; font-size: 14px; border-bottom: 1px dashed rgba(128,128,128,.3); padding: 5px 0; }
+/* Полоска показывает долю товара относительно самого продаваемого. */
+.atop-name { flex: 1 1 40%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.atop-bar { flex: 1 1 40%; height: 8px; border-radius: 999px; background: var(--tint); overflow: hidden; }
+.atop-bar i { display: block; height: 100%; background: var(--hot); }
+.atop li b { white-space: nowrap; }
+
+/* Чем платят: две крупные цифры вместо «3/2». */
+.apay { display: flex; gap: 10px; }
+.apay div { flex: 1; border: 2px solid var(--ink); border-radius: 14px; padding: 12px; background: var(--surface); display: flex; flex-direction: column; }
+.apay b { font-family: 'Montserrat'; font-size: 20px; }
+.apay span { font-size: 12px; opacity: .6; }
 
 .arow-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .apage select, .apage input {
@@ -1241,8 +1252,13 @@ a { color: inherit; text-decoration: none; }
 .zoomview-bar .muted { color: #f4f1ea; opacity: .55; font-size: 13px; }
 .zoomview .x.float { background: var(--acid); color: var(--on-acid); border-color: var(--on-acid); }
 @media (max-width: 620px) {
-  .zoomview-tee { width: 88vw; max-height: 62vh; }
-  .zoomview-tee svg, .zoomview-tee img { max-height: 62vh; }
+  /* На телефоне карточки маленькие (2 в ряд), поэтому в просмотре футболка
+     должна занимать почти весь экран. Грид с place-items: center не растягивал
+     картинку — переводим бокс в block и задаём ширину картинке напрямую. */
+  .zoomview-tee { width: 94vw; max-height: 80vh; display: block; }
+  .zoomview-tee svg, .zoomview-tee img {
+    width: 94vw !important; height: auto; max-height: 80vh; aspect-ratio: auto; object-fit: contain;
+  }
 }
 
 /* ── плавающий помощник ── */

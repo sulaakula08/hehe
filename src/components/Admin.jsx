@@ -143,13 +143,23 @@ export default function Admin({
   /* ── статистика ── */
   const stats = useMemo(() => {
     const revenue = orders.reduce((s, o) => s + o.total, 0)
+    const discounts = orders.reduce((s, o) => s + (o.discount || 0), 0)
     const byProduct = {}
+    let units = 0
     for (const o of orders) for (const it of o.items || []) {
       byProduct[it.title] = (byProduct[it.title] || 0) + it.qty
+      units += it.qty
     }
     const top = Object.entries(byProduct).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    const topMax = top[0]?.[1] || 1
     const cardCnt = orders.filter((o) => o.method === 'card').length
-    return { revenue, count: orders.length, avg: orders.length ? Math.round(revenue / orders.length) : 0, top, cardCnt }
+    const count = orders.length
+    return {
+      revenue, discounts, units, top, topMax, cardCnt,
+      walletCnt: count - cardCnt, count,
+      avg: count ? Math.round(revenue / count) : 0,
+      perOrder: count ? (units / count).toFixed(1) : '0',
+    }
   }, [orders])
 
   const shownOrders = payFilter === 'all' ? orders : orders.filter((o) => o.method === payFilter)
@@ -240,20 +250,34 @@ export default function Admin({
           {tab === 'overview' && (
             <div className="apane">
               <h2>Обзор</h2>
+              {!stats.count
+                ? <p className="muted">Пока нет ни одного заказа — цифры появятся после первой покупки.</p>
+                : <p className="muted">Данные по {stats.count} заказ(ам) из этого браузера.</p>}
               <div className="astats">
-                <Stat value={fmt(stats.revenue)} label="выручка" />
-                <Stat value={stats.count} label="заказов" />
-                <Stat value={fmt(stats.avg)} label="средний чек" />
-                <Stat value={`${visibleCount}/${catalog.length}`} label="товаров видно" />
-                <Stat value={`${stats.cardCnt}/${stats.count - stats.cardCnt}`} label="карта / кошелёк" />
+                <Stat value={fmt(stats.revenue)} label="Выручка" hint="сумма всех оплаченных заказов" />
+                <Stat value={stats.count} label="Заказов" hint="сколько раз оформили" />
+                <Stat value={fmt(stats.avg)} label="Средний чек" hint="выручка ÷ заказы" />
+                <Stat value={stats.units} label="Продано футболок" hint={`≈ ${stats.perOrder} шт. на заказ`} />
+                <Stat value={fmt(stats.discounts)} label="Скидок дано" hint="по промокодам" />
+                <Stat value={`${visibleCount} из ${catalog.length}`} label="Товаров на витрине" hint="видно / всего в каталоге" />
+              </div>
+
+              <h3>Чем платят</h3>
+              <div className="apay">
+                <div><b>{stats.cardCnt}</b><span>картой</span></div>
+                <div><b>{stats.walletCnt}</b><span>кошельком</span></div>
               </div>
 
               {stats.top.length > 0 && (
                 <>
-                  <h3>Топ товаров</h3>
+                  <h3>Топ товаров (по количеству)</h3>
                   <ul className="atop">
                     {stats.top.map(([name, qty]) => (
-                      <li key={name}><span>{name}</span><b>×{qty}</b></li>
+                      <li key={name}>
+                        <span className="atop-name">{name}</span>
+                        <span className="atop-bar"><i style={{ width: `${Math.round(qty / stats.topMax * 100)}%` }} /></span>
+                        <b>{qty} шт.</b>
+                      </li>
                     ))}
                   </ul>
                 </>
@@ -495,10 +519,10 @@ export default function Admin({
             <div className="apane">
               <h2>Заказы</h2>
               <div className="astats">
-                <Stat value={fmt(stats.revenue)} label="выручка" />
-                <Stat value={stats.count} label="заказов" />
-                <Stat value={fmt(stats.avg)} label="средний чек" />
-                <Stat value={`${stats.cardCnt}/${stats.count - stats.cardCnt}`} label="карта / кошелёк" />
+                <Stat value={fmt(stats.revenue)} label="Выручка" hint="сумма всех заказов" />
+                <Stat value={stats.count} label="Заказов" hint="всего оформлено" />
+                <Stat value={fmt(stats.avg)} label="Средний чек" hint="выручка ÷ заказы" />
+                <Stat value={stats.units} label="Продано футболок" hint={`≈ ${stats.perOrder} шт. на заказ`} />
               </div>
 
               <div className="arow-tools">
