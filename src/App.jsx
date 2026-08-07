@@ -878,6 +878,7 @@ export default function App() {
                 key={pr.id} p={pr} lang={lang} t={t}
                 onAdd={addToCart} priceOf={priceOf}
                 isFav={favorites.includes(pr.id)} onFav={onFav}
+                onZoom={setZoomed} onOpen={openProduct}
               />
             ))}
           </AnimatePresence>
