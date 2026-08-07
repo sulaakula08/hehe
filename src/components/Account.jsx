@@ -11,7 +11,7 @@ import { PRODUCTS, fmt, priceFor } from '../data.js'
  */
 export default function Account({
   t, lang, wallet, orders, favorites,
-  onTopup, onToggleFav, onClose, onToast, onAddToCart,
+  onTopup, onToggleFav, onClose, onToast, onAddToCart, onZoom,
 }) {
   const [tab, setTab] = useState('wallet')
 
@@ -120,7 +120,14 @@ export default function Account({
               {!favProducts.length && <p className="empty">{t.no_fav}</p>}
               {favProducts.map((p) => (
                 <div key={p.id} className="line">
-                  <div className="line-thumb" style={{ background: p.color }}>
+                  <div
+                    className="line-thumb tee-zoomable" style={{ background: p.color }}
+                    role="button" tabIndex={0}
+                    aria-label={t.zoom_in} title={t.zoom_in}
+                    onClick={() => onZoom?.({ ...p, photo: p.photos?.black })}
+                    onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ')
+                      && (e.preventDefault(), onZoom?.({ ...p, photo: p.photos?.black }))}
+                  >
                     <Tshirt product={{ ...p, photo: p.photos?.black }} lang={lang} />
                   </div>
                   <div className="line-info">

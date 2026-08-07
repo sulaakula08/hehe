@@ -64,7 +64,13 @@ export default function CartPage({
                     key={i.key} className="line"
                     initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
                   >
-                    <div className="line-thumb" style={{ background: product.color }}>
+                    <div
+                      className="line-thumb tee-zoomable" style={{ background: product.color }}
+                      role="button" tabIndex={0}
+                      aria-label={t.zoom_in} title={t.zoom_in}
+                      onClick={() => onZoom?.(product)}
+                      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onZoom?.(product))}
+                    >
                       <Tshirt product={product} lang={lang} />
                     </div>
                     <div className="line-info">

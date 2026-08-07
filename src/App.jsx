@@ -689,7 +689,15 @@ export default function App() {
           animate={{ opacity: 1, scale: 1, rotate: 3 }}
           transition={{ delay: 0.3, type: 'spring', stiffness: 70, damping: 14 }}
         >
-          <motion.div animate={{ y: [0, -14, 0] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}>
+          <motion.div
+            animate={{ y: [0, -14, 0] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+            className="tee-zoomable"
+            role="button" tabIndex={0}
+            aria-label={t.zoom_in} title={t.zoom_in}
+            onClick={() => setZoomed({ ...heroTee, photo: heroTee.photos.black })}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ')
+              && (e.preventDefault(), setZoomed({ ...heroTee, photo: heroTee.photos.black }))}
+          >
             <Tshirt product={{ ...heroTee, photo: heroTee.photos.black }} lang={lang} hovered big />
           </motion.div>
         </motion.div>
@@ -1062,6 +1070,7 @@ export default function App() {
               wallet={wallet} orders={orders} favorites={favorites}
               onTopup={topup} onToggleFav={(id) => setFavorites((f) => f.filter((x) => x !== id))}
               onClose={() => setOpenAccount(false)} onToast={say} onAddToCart={addToCart}
+              onZoom={(p) => { setOpenAccount(false); setZoomed(p) }}
             />
           )}
         </AnimatePresence>

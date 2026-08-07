@@ -1339,3 +1339,7 @@ a { color: inherit; text-decoration: none; }
   .pdp-media { position: static; }
   .pdp-actions .btn { flex: 1 1 auto; justify-content: center; }
 }
+
+/* Футболку можно увеличить кликом везде, где она показана как товар. */
+.tee-zoomable { cursor: zoom-in; }
+.line-thumb.tee-zoomable:hover { box-shadow: 0 0 0 2px var(--acid); }
