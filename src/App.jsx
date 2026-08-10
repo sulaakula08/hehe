@@ -12,6 +12,8 @@ import CartPage from './components/CartPage.jsx'
 import Privacy from './components/Privacy.jsx'
 import ProductPage from './components/ProductPage.jsx'
 import InfoPage from './components/InfoPage.jsx'
+import CheckoutPage from './components/CheckoutPage.jsx'
+import FavoritesPage from './components/FavoritesPage.jsx'
 import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, FITS, CATALOG_VER, T, fmt, DEFAULT_SETTINGS, COLLECTIONS, CONTACTS } from './data.js'
 
 const load = (k, d) => {
@@ -454,40 +456,32 @@ export default function App() {
   const checkout = async () => {
     if (!cart.length || paying) return
     if (!customer.name.trim() || !customer.phone.trim()) return say(t.fill_ship)
-    if (payMethod === 'wallet' && wallet.balance < total) return say(t.pay_fail)
 
     setPaying(true)
-    if (payMethod === 'card') {
-      say(t.authorizing)
-      await new Promise((r) => setTimeout(r, 900))   // имитация авторизации
-    }
+    say(t.authorizing)
+    await sleep(900)                    // имитация ухода в Kaspi Pay
 
     const order = {
       id: `${Date.now()}`,
       created_at: new Date().toISOString(),
-      method: payMethod,
+      method: 'kaspi',
       total,
       discount,
       promo: promo?.code ?? null,
       customer: { ...customer },
-      coins_earned: payMethod === 'wallet' ? cashback : 0,
       items: cart.map((i) => {
         const { price, title } = resolveItem(i)
         return { id: i.id, size: i.size, qty: i.qty, price, title }
       }),
     }
 
-    if (payMethod === 'wallet') {
-      setWallet((w) => ({ balance: w.balance - total, coins: w.coins + cashback }))
-    }
     setOrders((o) => [order, ...o])
 
     // Порядок важен. Сначала наплывает экран «оплачено», и только под ним
     // чистим корзину: очистка на виду схлопывает форму и итоги разом, страница
     // дёргается. Под непрозрачным экраном этого не видно.
-    const earned = payMethod === 'wallet' ? cashback : 0
     setPaying(false)
-    setPaid({ total, coins: earned })
+    setPaid({ total, coins: 0 })
 
     await sleep(280)                    // экран успел стать непрозрачным
     setCart([])
@@ -496,7 +490,7 @@ export default function App() {
     await sleep(1200)                   // даём прочитать сумму
     navigate('/')                       // корзина пуста — возвращаем на витрину
     setTimeout(() => setPaid(null), 400)
-    say(earned ? `${t.pay_ok} +${earned} ${t.added_coins}` : t.pay_ok)
+    say(t.pay_ok)
   }
 
   const topup = (amount) => {
@@ -523,6 +517,7 @@ export default function App() {
     window.location.hash = to
   }
   const openCart = route === '/cart'
+  const favProducts = visible.filter((p) => favorites.includes(p.id))
   const setOpenCart = (v) => navigate(v ? '/cart' : '/')
 
   /** Ставит фильтр и уводит к каталогу на главной. */
@@ -541,7 +536,15 @@ export default function App() {
     '/catalog/fresh':  { title: t.pg_new, desc: t.pg_new_d,  items: visible.filter((x) => x.fresh) },
   }
   const page = PAGES[route]
-  const heroTee = findProduct('shashlyk') || visible[0] || PRODUCTS[0]
+  // Парящая футболка на главной сменяется сама — витрина не выглядит статичной.
+  // Секунда на кадр читается как мигание, поэтому держим ~2.2 с.
+  const [heroIdx, setHeroIdx] = useState(0)
+  useEffect(() => {
+    if (route !== '/' || visible.length < 2) return
+    const id = setInterval(() => setHeroIdx((i) => (i + 1) % visible.length), 2200)
+    return () => clearInterval(id)
+  }, [route, visible.length])
+  const heroTee = visible[heroIdx % visible.length] || PRODUCTS[0]
 
   // Страница товара: /product/<id>. Похожие — из того же рынка, без самого товара.
   const productId = route.startsWith('/product/') ? route.slice('/product/'.length) : null
@@ -605,7 +608,9 @@ export default function App() {
 
       {/* ── шапка ── */}
       <header className="nav">
-        <Logo />
+        <button className="logo-btn" onClick={() => navigate('/')} aria-label={t.nav_home} title={t.nav_home}>
+          <Logo />
+        </button>
         <nav className="nav-links">
           <a href="#catalog">{t.nav_shop}</a>
           <a href="#how">{t.nav_how}</a>
@@ -627,14 +632,6 @@ export default function App() {
               </button>
             ))}
           </div>
-
-          <button className="btn btn-ghost" onClick={showAdmin} title={t.nav_admin}>
-            <Icon name="settings" /> <span className="hide-sm">{t.nav_admin}</span>
-          </button>
-
-          <button className="btn btn-ghost" onClick={() => setOpenAccount(true)}>
-            <Icon name="wallet" /> {fmt(wallet.balance)}
-          </button>
 
           <motion.button
             ref={cartBtnRef}
@@ -698,7 +695,18 @@ export default function App() {
             onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ')
               && (e.preventDefault(), setZoomed({ ...heroTee, photo: heroTee.photos.black }))}
           >
-            <Tshirt product={{ ...heroTee, photo: heroTee.photos.black }} lang={lang} hovered big />
+            {/* Смена по таймеру: новый ключ — новый узел, initial→animate
+                проигрывается сам. Без AnimatePresence mode="wait" намеренно:
+                он монтирует следующую футболку только после анимации ухода
+                предыдущей, и если та не доиграет — герой застывает навсегда. */}
+            <motion.div
+              key={heroTee.id}
+              initial={{ opacity: 0, rotateY: -30, scale: 0.92 }}
+              animate={{ opacity: 1, rotateY: 0, scale: 1 }}
+              transition={{ duration: 0.45, ease: 'easeOut' }}
+            >
+              <Tshirt product={{ ...heroTee, photo: heroTee.photos.black }} lang={lang} hovered big />
+            </motion.div>
           </motion.div>
         </motion.div>
       </section>
@@ -708,7 +716,7 @@ export default function App() {
         <div className="statstrip">
           {[
             [visible.length, t.st_products], [SIZES.length, t.st_sizes], [2, t.st_colors],
-            [settings.cashback, t.st_cashback], [2, t.st_langs], ['∞', t.st_custom],
+            [2, t.st_langs], ['∞', t.st_custom],
           ].map(([n, l]) => (
             <div key={l} className="statcard"><b>{n}</b><span>{l}</span></div>
           ))}
@@ -758,8 +766,7 @@ export default function App() {
             ['shirt', t.sec_ru, t.sec_ru_d, `${visible.filter((p) => p.market === 'ru').length} ${t.goods}`, () => gotoCatalog('ru')],
             ['shirt', t.sec_kk, t.sec_kk_d, `${visible.filter((p) => p.market === 'kk').length} ${t.goods}`, () => gotoCatalog('kk')],
             ['brush', t.sec_custom, t.sec_custom_d, '∞', () => setOpenDesigner(true)],
-            ['heart', t.sec_fav, t.sec_fav_d, `${favorites.length} ${t.goods}`, () => setOpenAccount(true)],
-            ['wallet', t.sec_wallet, t.sec_wallet_d, fmt(wallet.balance), () => setOpenAccount(true)],
+            ['heart', t.sec_fav, t.sec_fav_d, `${favorites.length} ${t.goods}`, () => navigate('/favorites')],
           ].map(([ic, ti, de, meta, go]) => (
             <motion.button
               key={ti} className="tile" onClick={go}
@@ -893,8 +900,8 @@ export default function App() {
         </div>
         <div className="lifegrid">
           {[[t.life_1_t, t.life_1_d, t.life_1_c, 'brush', () => setOpenDesigner(true)],
-            [t.life_2_t, t.life_2_d, t.life_2_c, 'wallet', () => setOpenAccount(true)],
-            [t.life_3_t, t.life_3_d, t.life_3_c, 'heart', () => setOpenAccount(true)]].map(([ti, de, cta, ic, go]) => (
+            [t.life_2_t, t.life_2_d, t.life_2_c, 'cart', () => navigate('/cart')],
+            [t.life_3_t, t.life_3_d, t.life_3_c, 'heart', () => navigate('/favorites')]].map(([ti, de, cta, ic, go]) => (
             <motion.div
               key={ti} className="lifecard"
               initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
@@ -968,7 +975,27 @@ export default function App() {
           upsell={visible.filter((x) => !cart.some((i) => i.id === x.id)).slice(0, 4)}
           onAdd={addToCart} priceOf={priceOf} favorites={favorites} onFav={onFav}
           onHome={() => navigate('/')} onCatalog={() => navigate('/catalog')}
-          onPrivacy={() => navigate('/privacy')} onZoom={setZoomed} onOpen={openProduct}
+          onZoom={setZoomed} onOpen={openProduct}
+          onNext={() => navigate('/checkout')}
+        />
+      )}
+
+      {/* ── шаг 2: проверка данных и оплата ── */}
+      {route === '/checkout' && (
+        <CheckoutPage
+          t={t} lang={lang} cart={cart} resolveItem={resolveItem}
+          subtotal={subtotal} discount={discount} total={total} promo={promo}
+          customer={customer} checkout={checkout} paying={paying}
+          onBack={() => navigate('/cart')} onPrivacy={() => navigate('/privacy')} onToast={say}
+        />
+      )}
+
+      {/* ── избранное ── */}
+      {route === '/favorites' && (
+        <FavoritesPage
+          t={t} lang={lang} products={favProducts} priceOf={priceOf}
+          favorites={favorites} onFav={onFav} onZoom={setZoomed} onOpen={openProduct}
+          onHome={() => navigate('/')} onCatalog={() => navigate('/catalog')}
         />
       )}
 
@@ -1013,6 +1040,8 @@ export default function App() {
           <div className="foot-col">
             <h4>{t.foot_buyer}</h4>
             <button className="foot-link" onClick={() => navigate('/cart')}>{t.foot_cart}</button>
+            <button className="foot-link" onClick={() => navigate('/favorites')}>{t.fav_title}</button>
+            <button className="foot-link" onClick={() => setOpenAccount(true)}>{t.my_orders}</button>
             <a className="foot-link" href="#how">{t.foot_how}</a>
             <a className="foot-link" href="#collections">{t.foot_coll}</a>
             <button className="foot-link" onClick={() => navigate('/pay')}>{t.foot_pay}</button>
@@ -1036,7 +1065,7 @@ export default function App() {
         <div className="foot-bottom">
           <Logo size={30} />
           <p>{t.footer}</p>
-          <button className="link" onClick={showAdmin}>{t.nav_admin}</button>
+          {/* Вход в админку с витрины убран: панель открывается по адресу #admin. */}
           <span>© {new Date().getFullYear()} funymems.cc</span>
         </div>
       </footer>
@@ -1067,11 +1096,8 @@ export default function App() {
         <AnimatePresence>
           {openAccount && (
             <Account
-              key="account" t={t} lang={lang}
-              wallet={wallet} orders={orders} favorites={favorites}
-              onTopup={topup} onToggleFav={(id) => setFavorites((f) => f.filter((x) => x !== id))}
-              onClose={() => setOpenAccount(false)} onToast={say} onAddToCart={addToCart}
-              onZoom={(p) => { setOpenAccount(false); setZoomed(p) }}
+              key="account" t={t} lang={lang} orders={orders}
+              onClose={() => setOpenAccount(false)}
             />
           )}
         </AnimatePresence>
@@ -1142,6 +1168,7 @@ export default function App() {
           whileTap={{ scale: 0.9 }}
           onClick={() => {
             setBottomTab('home')
+            navigate('/')
             window.scrollTo({ top: 0, behavior: 'smooth' })
           }}
         >
@@ -1154,6 +1181,14 @@ export default function App() {
           onClick={() => { setBottomTab('catalog'); gotoCatalog('all') }}
         >
           <Icon name="shirt" size={19} /><span>{t.nav_shop}</span>
+        </motion.button>
+
+        <motion.button
+          className={route === '/favorites' ? 'on' : ''}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => { setBottomTab('fav'); navigate('/favorites') }}
+        >
+          <Icon name="heart" size={19} /><span>{t.nav_fav}{favorites.length ? ` · ${favorites.length}` : ''}</span>
         </motion.button>
 
         {/* Корзина подсвечивается, пока шторка открыта, и подпрыгивает,

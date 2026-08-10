@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Tshirt from './Tshirt.jsx'
 import Icon from './Icon.jsx'
@@ -12,14 +11,11 @@ import { fmt } from '../data.js'
  */
 export default function CartPage({
   t, lang, cart, resolveItem, setQty, removeFromCart,
-  subtotal, discount, total, cashback, promo, promoInput, setPromoInput, applyPromo,
-  customer, setCustomer, payMethod, setPayMethod, wallet, settings,
-  checkout, paying, count, upsell, onAdd, priceOf, favorites, onFav,
-  onHome, onCatalog, onPrivacy, onZoom, onOpen,
+  subtotal, discount, total, promo, promoInput, setPromoInput, applyPromo,
+  customer, setCustomer, count, upsell, onAdd, priceOf, favorites, onFav,
+  onHome, onCatalog, onZoom, onOpen, onNext,
 }) {
-  const [agree, setAgree] = useState(false)
   const set = (k) => (e) => setCustomer((c) => ({ ...c, [k]: e.target.value }))
-  const ready = cart.length > 0 && agree && !paying
 
   return (
     <section className="section wrap">
@@ -40,9 +36,6 @@ export default function CartPage({
       <div className="cart-sum">
         <div className="cart-sum-box"><b>{fmt(total)}</b><span>{t.total}</span></div>
         <div className="cart-sum-box"><b>{count}</b><span>{t.goods.toLowerCase()}</span></div>
-        {payMethod === 'wallet' && (
-          <div className="cart-sum-box"><b>+{cashback}</b><span>{t.cashback}</span></div>
-        )}
       </div>
 
       {!cart.length ? (
@@ -95,6 +88,7 @@ export default function CartPage({
           {/* ── оформление ── */}
           <div className="cart-form">
             <h3>{t.checkout_title}</h3>
+            <p className="cart-notice"><Icon name="chat" size={15} /> {t.cart_notice}</p>
             <div className="ship-grid">
               <label className="afield"><span>{t.f_name}</span>
                 <input value={customer.name} onChange={set('name')} /></label>
@@ -141,44 +135,19 @@ export default function CartPage({
             <label className="afield"><span>{t.comment_title}</span>
               <textarea rows={3} value={customer.comment || ''} onChange={set('comment')} /></label>
 
-            <h3>{t.pay_method}</h3>
-            <div className="d-row">
-              <button className={`chip big ${payMethod === 'card' ? 'on' : ''}`} onClick={() => setPayMethod('card')}>
-                <Icon name="card" /> {t.pay_card} •••• 4242
-              </button>
-              <button className={`chip big ${payMethod === 'wallet' ? 'on' : ''}`} onClick={() => setPayMethod('wallet')}>
-                <Icon name="wallet" /> {t.pay_wallet}
-              </button>
-            </div>
-            <p className="muted small">
-              {payMethod === 'card' ? t.card_demo : `${t.balance}: ${fmt(wallet.balance)} · ${t.cashback}`}
-            </p>
-
+            {/* Оплата и согласие переехали на второй шаг — «Проверьте свои
+                данные». Здесь только состав заказа и данные покупателя. */}
             <div className="cart-totals">
               {discount > 0 && (
                 <div className="row muted"><span>{t.discount} · {promo.code}</span><b>−{fmt(discount)}</b></div>
               )}
               <div className="row muted"><span>{t.subtotal}</span><b>{fmt(subtotal)}</b></div>
               <div className="row"><span>{t.total}</span><b>{fmt(total)}</b></div>
-              {payMethod === 'wallet' && (
-                <div className="row muted"><span>{t.cashback}</span>
-                  <b className="with-icon"><Icon name="coin" size={15} /> +{cashback}</b></div>
-              )}
             </div>
 
-            {/* Согласие — обязательное, как в образце. */}
-            <label className="consent">
-              <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
-              <span>
-                {t.consent_1}{' '}
-                <button type="button" className="link" onClick={onPrivacy}>{t.consent_link}</button>.
-              </span>
-            </label>
-
-            <button className="btn btn-solid full big" onClick={checkout} disabled={!ready}>
-              {paying ? t.processing : `${t.checkout} · ${fmt(total)}`}
+            <button className="btn btn-solid full big" onClick={onNext} disabled={!cart.length}>
+              {t.next_step} →
             </button>
-            <p className="muted small">{t.checkout_note}</p>
           </div>
         </div>
       )}

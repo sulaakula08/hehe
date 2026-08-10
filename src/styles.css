@@ -1052,7 +1052,7 @@ a { color: inherit; text-decoration: none; }
 
   /* Панель снизу дублирует главное действие — как в образце. */
   .bottombar {
-    display: grid; grid-template-columns: repeat(3, 1fr);
+    display: grid; grid-template-columns: repeat(4, 1fr);
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 55;
     background: var(--paper); border-top: var(--line);
     padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
@@ -1060,8 +1060,9 @@ a { color: inherit; text-decoration: none; }
   .bottombar button {
     display: flex; flex-direction: column; align-items: center; gap: 3px;
     border: 0; background: transparent; color: var(--ink); cursor: pointer;
-    font-family: inherit; font-size: 11px; font-weight: 700;
-    padding: 8px 4px; border-radius: 12px;
+    font-family: inherit; font-size: 10.5px; font-weight: 700;
+    padding: 8px 2px; border-radius: 12px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   /* Активный пункт — жёлтый: сразу видно, где находишься. */
   .bottombar button.on { background: var(--acid); color: var(--on-acid); }
@@ -1343,3 +1344,47 @@ a { color: inherit; text-decoration: none; }
 /* Футболку можно увеличить кликом везде, где она показана как товар. */
 .tee-zoomable { cursor: zoom-in; }
 .line-thumb.tee-zoomable:hover { box-shadow: 0 0 0 2px var(--acid); }
+
+/* ── логотип как кнопка «на главную» ── */
+.logo-btn { background: none; border: 0; padding: 0; cursor: pointer; display: flex; }
+
+/* ── шаг 2: проверка данных ── */
+.co-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 20px; align-items: start; }
+.co-side { display: flex; flex-direction: column; gap: 16px; }
+.co-card {
+  border: var(--line); border-radius: var(--r); background: var(--surface);
+  padding: 18px; display: flex; flex-direction: column; gap: 10px;
+}
+.co-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.co-card-head h3 { font-size: 17px; }
+.co-row { display: flex; justify-content: space-between; gap: 14px; font-size: 14px; padding: 5px 0; border-bottom: 1px dashed rgba(128,128,128,.25); }
+.co-row:last-child { border-bottom: 0; }
+.co-label { opacity: .6; flex-shrink: 0; }
+.co-value { text-align: right; word-break: break-word; font-weight: 600; }
+
+.co-items { display: flex; flex-direction: column; gap: 10px; }
+.co-item { display: flex; align-items: center; gap: 12px; }
+.co-thumb { width: 54px; height: 60px; border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; flex-shrink: 0; }
+.co-item-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.co-item-info b { font-size: 14px; }
+
+/* Kaspi — фирменный красный, текст всегда белый. */
+.btn-kaspi { background: #f14635; color: #fff; border-color: var(--ink); }
+.btn-kaspi:disabled { opacity: .5; }
+
+.cart-notice {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: var(--tint); border-radius: 12px; padding: 10px 12px;
+  font-size: 13px; line-height: 1.45;
+}
+
+@media (max-width: 860px) {
+  .co-grid { grid-template-columns: 1fr; }
+}
+
+/* ── админка: блоки правки товара крупнее ── */
+.arow { padding: 14px; gap: 16px; }
+.athumb { width: 72px; height: 82px; }
+.afields { gap: 10px; }
+.afields input, .afields select, .afields textarea { padding: 11px 13px; font-size: 15px; }
+.aprice input { width: 120px; }
