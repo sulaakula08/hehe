@@ -70,7 +70,7 @@ export default function Card({ p, lang, t, priceOf, isFav, onFav, onZoom, onOpen
       <p className="card-sub">{p[lang].sub}</p>
 
       <div className="card-foot">
-        <span className="price">{fmt(priceOf(p, 'XL'))}</span>
+        <span className="price">{fmt(priceOf(p, 'XL', 'classic'))}</span>
         <motion.button className="btn btn-add" onClick={() => onOpen?.(p)} whileTap={{ scale: 0.88 }}>
           {t.pr_choose}
         </motion.button>

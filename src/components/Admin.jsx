@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import Icon from './Icon.jsx'
 import Logo from './Logo.jsx'
-import { PRODUCTS, MARKETS, SIZES, DEFAULT_SETTINGS, ADMIN_PASS, fmt, asset } from '../data.js'
+import { PRODUCTS, MARKETS, SIZES, FITS, FIT_EXTRA, DEFAULT_SETTINGS, ADMIN_PASS, fmt, asset } from '../data.js'
 
 const EMPTY = {
   ruTitle: '', ruSub: '', kkTitle: '', kkSub: '',
@@ -174,7 +174,7 @@ export default function Admin({
   const setS = (upd) => setSettings((s) => ({ ...s, ...upd }))
   const resetDemo = () => {
     setCatalog(PRODUCTS)
-    setSizeExtra({ XL: 0, XXL: 0, OVERSIZE: 3000 })
+    setSizeExtra({ XL: 0, XXL: 0 })
     setSettings(DEFAULT_SETTINGS)
     setOpenRow(null)
     onToast('Каталог и цены сброшены')
@@ -460,7 +460,7 @@ export default function Admin({
                         </div>
                         <div className="arow-more-foot">
                           <span className="muted">
-                            id: {p.id} · S {fmt(priceOf(p, 'S'))} · XL {fmt(priceOf(p, 'XL'))} · XXL {fmt(priceOf(p, 'XXL'))}
+                            id: {p.id} · XL {fmt(priceOf(p, 'XL', 'classic'))} · оверсайз {fmt(priceOf(p, 'XL', 'oversize'))}
                           </span>
                           <button className="link danger" onClick={() => removeProduct(p.id)}>Удалить товар</button>
                         </div>
@@ -477,9 +477,10 @@ export default function Admin({
             <div className="apane">
               <h2>Цены</h2>
               <p className="muted">
-                <b>Надбавка</b> к базовой цене за размер — не цена. 0 = размер стоит как база;
-                обычно S/M/L без надбавки, а XL/XXL дороже.
+                <b>Надбавка</b> к базовой цене — не сама цена. 0 значит «стоит как база».
               </p>
+
+              <h3>За размер</h3>
               <div className="asizes">
                 {SIZES.map((s) => (
                   <label key={s} className="aprice col">
@@ -487,6 +488,21 @@ export default function Admin({
                     <span className="aplus">+</span>
                     <input type="number" step={100} value={sizeExtra[s] ?? 0}
                       onChange={(e) => setSizeExtra((x) => ({ ...x, [s]: Number(e.target.value) || 0 }))} />
+                    <span className="muted">₸</span>
+                  </label>
+                ))}
+              </div>
+
+              <h3>За крой</h3>
+              <p className="muted small">
+                Надбавка за крой задана в коде (data.js, FIT_EXTRA) — она одинаковая для всех товаров.
+              </p>
+              <div className="asizes">
+                {Object.entries(FITS).map(([k, v]) => (
+                  <label key={k} className="aprice col">
+                    <span>{v.ru}</span>
+                    <span className="aplus">+</span>
+                    <input type="number" value={FIT_EXTRA[k] ?? 0} disabled />
                     <span className="muted">₸</span>
                   </label>
                 ))}
@@ -509,7 +525,8 @@ export default function Admin({
               </label>
 
               <p className="muted">
-                Пример: XL/XXL {fmt(15900)} → ОВЕРСАЙЗ {fmt(15900 + (sizeExtra.OVERSIZE ?? 0))}
+                Пример при базе {fmt(15900)}: классика XL — {fmt(15900 + (sizeExtra.XL ?? 0))},
+                оверсайз XL — {fmt(15900 + (sizeExtra.XL ?? 0) + (FIT_EXTRA.oversize ?? 0))}
               </p>
             </div>
           )}

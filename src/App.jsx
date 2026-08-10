@@ -14,7 +14,7 @@ import ProductPage from './components/ProductPage.jsx'
 import InfoPage from './components/InfoPage.jsx'
 import CheckoutPage from './components/CheckoutPage.jsx'
 import FavoritesPage from './components/FavoritesPage.jsx'
-import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, FITS, CATALOG_VER, T, fmt, DEFAULT_SETTINGS, COLLECTIONS, CONTACTS } from './data.js'
+import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, FIT_EXTRA, FITS, CATALOG_VER, T, fmt, DEFAULT_SETTINGS, COLLECTIONS, CONTACTS } from './data.js'
 
 const load = (k, d) => {
   try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch { return d }
@@ -300,7 +300,9 @@ export default function App() {
   // Товар ищем сначала в редактируемом каталоге, потом в дефолтах — чтобы
   // старые заказы и избранное на удалённый товар не падали.
   const findProduct = (id) => catalog.find((x) => x.id === id) || PRODUCTS.find((x) => x.id === id)
-  const priceOf = (p, size) => (p?.base ?? 0) + (sizeExtra[size] ?? 0)
+  // Цена = база + надбавка за размер + надбавка за крой (оверсайз дороже).
+  const priceOf = (p, size, fit = 'classic') =>
+    (p?.base ?? 0) + (sizeExtra[size] ?? 0) + (FIT_EXTRA[fit] ?? 0)
 
   useEffect(() => save('hehe.lang', lang), [lang])
   useEffect(() => save('hehe.cart', cart), [cart])
@@ -383,7 +385,7 @@ export default function App() {
   // fit и qty приходят со страницы товара; из быстрых мест (избранное) —
   // значения по умолчанию, поэтому старые вызовы работают без изменений.
   const addToCart = (p, size, color = 'black', from, opts = {}) => {
-    const fit = opts.fit ?? 'men'
+    const fit = opts.fit ?? 'classic'
     const add = Math.max(1, opts.qty ?? 1)
     launchFlight({ ...p, photo: p.photos?.[color] }, from)
     setCart((c) => {
@@ -423,9 +425,9 @@ export default function App() {
     if (!p) return { price: 0, title: '—', product: { id: i.id, color: '#ccc', ru: {}, kk: {} } }
     const color = i.color ?? 'black'
     const cLabel = color === 'white' ? t.c_white : t.c_black
-    const fLabel = FITS[i.fit ?? 'men']?.[lang]
+    const fLabel = FITS[i.fit ?? 'classic']?.[lang]
     return {
-      price: priceOf(p, i.size),
+      price: priceOf(p, i.size, i.fit ?? 'classic'),
       title: `${p[lang].title} · ${cLabel}${fLabel ? ` · ${fLabel}` : ''}`,
       product: { ...p, photo: p.photos[color] },
     }

@@ -315,23 +315,25 @@ export const CONTACTS = {
   telegram: { label: '@funymems', href: 'https://t.me/' },
 }
 
-// Крой — отдельная ось выбора: размеры отвечают за объём, крой за посадку.
+// Крой — посадка футболки. Оверсайз это именно крой, а не размер:
+// раньше он стоял в размерах и путался с XL/XXL.
 export const FITS = {
-  men:   { ru: 'Мужской', kk: 'Ерлерге' },
-  women: { ru: 'Женский', kk: 'Әйелдерге' },
+  classic:  { ru: 'Классика', kk: 'Классика' },
+  oversize: { ru: 'Оверсайз', kk: 'Оверсайз' },
 }
 
-export const SIZES = ['XL', 'XXL', 'OVERSIZE']
-export const SIZE_LABELS = { XL: 'XL', XXL: 'XXL', OVERSIZE: 'Оверсайз' }
+export const SIZES = ['XL', 'XXL']
+export const SIZE_LABELS = { XL: 'XL', XXL: 'XXL' }
 
 // Версия каталога/цен. Бампаем — и сохранённый в localStorage каталог
 // (со старыми ценами, размерами и дублями) один раз сбрасывается на дефолт.
-export const CATALOG_VER = 2
+export const CATALOG_VER = 3
 
-// Цена зависит от размера: большие требуют больше ткани.
-// XL и XXL — 15 900 (базовая), ОВЕРСАЙЗ — 18 900.
-export const SIZE_EXTRA = { XL: 0, XXL: 0, OVERSIZE: 3000 }
-export const priceFor = (product, size) => (product.base ?? 0) + (SIZE_EXTRA[size] ?? 0)
+// Цена: XL и XXL по базовой (15 900), оверсайз-крой дороже на 3 000 → 18 900.
+export const SIZE_EXTRA = { XL: 0, XXL: 0 }
+export const FIT_EXTRA = { classic: 0, oversize: 3000 }
+export const priceFor = (product, size, fit = 'classic') =>
+  (product.base ?? 0) + (SIZE_EXTRA[size] ?? 0) + (FIT_EXTRA[fit] ?? 0)
 
 /* ── Конструктор ── */
 export const CUSTOM_PRICE = 15900

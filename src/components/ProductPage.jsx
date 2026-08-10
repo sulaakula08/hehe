@@ -15,14 +15,14 @@ export default function ProductPage({
   onHome, onCatalog, onOpen, onCart, onPay,
 }) {
   const isFav = favorites.includes(product?.id)
-  const [fit, setFit] = useState('men')
+  const [fit, setFit] = useState('classic')
   const [size, setSize] = useState('XL')
   const [color, setColor] = useState('black')
   const [qty, setQty] = useState(1)
   const mediaRef = useRef(null)
 
   // Открыли другой товар — выбор начинаем заново, иначе он «перетекает».
-  useEffect(() => { setFit('men'); setSize('XL'); setColor('black'); setQty(1) }, [product?.id])
+  useEffect(() => { setFit('classic'); setSize('XL'); setColor('black'); setQty(1) }, [product?.id])
 
   if (!product) {
     return (
@@ -41,7 +41,7 @@ export default function ProductPage({
 
   const m = MARKETS[product.market]
   const shown = { ...product, photo: product.photos[color] }
-  const unit = priceOf(product, size)
+  const unit = priceOf(product, size, fit)
 
   const add = () => {
     // Количество отправляем одним вызовом: qty раз дёргать корзину не нужно.
