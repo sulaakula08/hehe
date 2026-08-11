@@ -72,6 +72,24 @@ GitHub Pages тоже настроен (`.github/workflows/deploy.yml`) и на 
 `VITE_SUPABASE_ANON_KEY`. **`service_role` в `.env` класть нельзя** — всё с
 префиксом `VITE_` попадает в собранный сайт и видно любому.
 
+### Регистрация по почте
+
+1. В Supabase → SQL Editor выполнить `supabase/schema.sql`, затем `supabase/auth.sql`.
+2. Скопировать `.env.example` в `.env` и вписать `VITE_SUPABASE_URL` и
+   `VITE_SUPABASE_ANON_KEY` (Project Settings → API).
+3. Перезапустить `npm run dev` — Vite читает `.env` только при старте.
+
+В Supabase → Authentication → URL Configuration добавить адреса сайта
+в **Site URL** и **Redirect URLs** (`http://localhost:5173` и боевой домен),
+иначе ссылка из письма приведёт не туда.
+
+По умолчанию Supabase требует подтверждения почты: после регистрации
+сессии сразу нет, и сайт покажет «проверьте почту». Для быстрых тестов
+подтверждение отключается в Authentication → Sign In / Providers → Email.
+
+Без ключей вход просто выключен: кнопки «Войти» в шапке нет, страница
+`/#/login` открывается и честно об этом пишет, остальной сайт работает.
+
 ### Чего SQL не делает
 
 Схема только хранит данные. Отдельно нужен backend (Node / serverless):

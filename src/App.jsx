@@ -15,6 +15,8 @@ import InfoPage from './components/InfoPage.jsx'
 import CheckoutPage from './components/CheckoutPage.jsx'
 import FavoritesPage from './components/FavoritesPage.jsx'
 import HeroTee from './components/HeroTee.jsx'
+import AuthPage from './components/AuthPage.jsx'
+import { useAuth } from './lib/useAuth.js'
 import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, FIT_EXTRA, FITS, CATALOG_VER, T, fmt, DEFAULT_SETTINGS, COLLECTIONS, CONTACTS } from './data.js'
 
 const load = (k, d) => {
@@ -541,6 +543,8 @@ export default function App() {
   const page = PAGES[route]
   // Парящая футболка на главной сменяется сама — витрина не выглядит статичной.
   // Секунда на кадр читается как мигание, поэтому держим ~2.2 с.
+  const auth = useAuth()
+
   const [heroIdx, setHeroIdx] = useState(0)
   const [heroHeld, setHeroHeld] = useState(false)
   useEffect(() => {
@@ -636,6 +640,21 @@ export default function App() {
               </button>
             ))}
           </div>
+
+          {auth.ready && !auth.loading && (
+            auth.user
+              ? (
+                <button className="btn btn-ghost" onClick={() => setOpenAccount(true)} title={t.au_account}>
+                  <Icon name="user" size={17} />
+                  <span className="hide-sm">{auth.profile?.name || t.au_account}</span>
+                </button>
+              )
+              : (
+                <button className="btn btn-ghost" onClick={() => navigate('/login')}>
+                  <Icon name="user" size={17} /> <span className="hide-sm">{t.au_login}</span>
+                </button>
+              )
+          )}
 
           <motion.button
             ref={cartBtnRef}
@@ -997,6 +1016,14 @@ export default function App() {
         />
       )}
 
+      {route === '/login' && (
+        <AuthPage
+          t={t} auth={auth} onToast={say}
+          onHome={() => navigate('/')}
+          onDone={() => navigate('/')}
+        />
+      )}
+
       {route === '/privacy' && <Privacy t={t} onHome={() => navigate('/')} />}
 
       {route === '/pay' && (
@@ -1084,6 +1111,7 @@ export default function App() {
           {openAccount && (
             <Account
               key="account" t={t} lang={lang} orders={orders}
+              auth={auth} onToast={say}
               onClose={() => setOpenAccount(false)}
             />
           )}
