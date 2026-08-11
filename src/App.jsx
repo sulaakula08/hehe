@@ -14,6 +14,7 @@ import ProductPage from './components/ProductPage.jsx'
 import InfoPage from './components/InfoPage.jsx'
 import CheckoutPage from './components/CheckoutPage.jsx'
 import FavoritesPage from './components/FavoritesPage.jsx'
+import HeroTee from './components/HeroTee.jsx'
 import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, FIT_EXTRA, FITS, CATALOG_VER, T, fmt, DEFAULT_SETTINGS, COLLECTIONS, CONTACTS } from './data.js'
 
 const load = (k, d) => {
@@ -541,11 +542,12 @@ export default function App() {
   // Парящая футболка на главной сменяется сама — витрина не выглядит статичной.
   // Секунда на кадр читается как мигание, поэтому держим ~2.2 с.
   const [heroIdx, setHeroIdx] = useState(0)
+  const [heroHeld, setHeroHeld] = useState(false)
   useEffect(() => {
-    if (route !== '/' || visible.length < 2) return
+    if (route !== '/' || visible.length < 2 || heroHeld) return
     const id = setInterval(() => setHeroIdx((i) => (i + 1) % visible.length), 2200)
     return () => clearInterval(id)
-  }, [route, visible.length])
+  }, [route, visible.length, heroHeld])
   const heroTee = visible[heroIdx % visible.length] || PRODUCTS[0]
 
   // Страница товара: /product/<id>. Похожие — из того же рынка, без самого товара.
@@ -688,28 +690,11 @@ export default function App() {
           animate={{ opacity: 1, scale: 1, rotate: 3 }}
           transition={{ delay: 0.3, type: 'spring', stiffness: 70, damping: 14 }}
         >
-          <motion.div
-            animate={{ y: [0, -14, 0] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-            className="tee-zoomable"
-            role="button" tabIndex={0}
-            aria-label={t.zoom_in} title={t.zoom_in}
-            onClick={() => setZoomed({ ...heroTee, photo: heroTee.photos.black })}
-            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ')
-              && (e.preventDefault(), setZoomed({ ...heroTee, photo: heroTee.photos.black }))}
-          >
-            {/* Смена по таймеру: новый ключ — новый узел, initial→animate
-                проигрывается сам. Без AnimatePresence mode="wait" намеренно:
-                он монтирует следующую футболку только после анимации ухода
-                предыдущей, и если та не доиграет — герой застывает навсегда. */}
-            <motion.div
-              key={heroTee.id}
-              initial={{ opacity: 0, rotateY: -30, scale: 0.92 }}
-              animate={{ opacity: 1, rotateY: 0, scale: 1 }}
-              transition={{ duration: 0.45, ease: 'easeOut' }}
-            >
-              <Tshirt product={{ ...heroTee, photo: heroTee.photos.black }} lang={lang} hovered big />
-            </motion.div>
-          </motion.div>
+          <HeroTee
+            product={heroTee} lang={lang} t={t}
+            onZoom={() => setZoomed({ ...heroTee, photo: heroTee.photos.black })}
+            onHold={setHeroHeld}
+          />
         </motion.div>
       </section>
 
