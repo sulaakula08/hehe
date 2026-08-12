@@ -282,6 +282,7 @@ export default function App() {
     load('hehe.catalogVer', 0) !== CATALOG_VER ? SIZE_EXTRA : load('hehe.sizeExtra', SIZE_EXTRA))
   const [promos, setPromos] = useState(() => load('hehe.promos', []))
   const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS, ...load('hehe.settings', {}) }))
+  const [loggingOut, setLoggingOut] = useState(false)  // экран «выходим…»
   const [promo, setPromo] = useState(null)   // применённый в корзине
   const [promoInput, setPromoInput] = useState('')
   // Данные доставки: сохраняем, чтобы не вводить заново.
@@ -406,6 +407,44 @@ export default function App() {
 
   // fit и qty приходят со страницы товара; из быстрых мест (избранное) —
   // значения по умолчанию, поэтому старые вызовы работают без изменений.
+  /* ── выход ──
+     Личные данные — корзина, избранное, заказы, кошелёк и данные доставки —
+     сбрасываем в состоянии и удаляем из localStorage: за одним браузером может
+     сидеть следующий человек, и чужой заказ ему показывать нельзя. Сразу после
+     сброса эффекты сохранения запишут ключи заново, но уже пустыми; removeItem
+     нужен для ключей, за которыми нет своего эффекта.
+
+     Настройки магазина (каталог, цены, промокоды) не трогаем: их правит
+     администратор, и выход покупателя не должен сбрасывать витрину. Язык и
+     тему тоже оставляем — это настройки устройства, а не учётной записи. */
+  const PERSONAL_KEYS = ['hehe.cart', 'hehe.fav', 'hehe.orders', 'hehe.wallet', 'hehe.pay', 'hehe.customer']
+
+  const logout = async () => {
+    if (loggingOut) return
+    setLoggingOut(true)
+    setOpenAccount(false)
+
+    // Чистим состояние сразу, чтобы под экраном загрузки уже ничего не осталось.
+    setCart([]); setFavorites([]); setOrders([])
+    setWallet({ balance: 25000, coins: 0 })
+    setPayMethod('card')
+    setCustomer({ name: '', phone: '', city: '', address: '' })
+    setPromo(null); setPromoInput('')
+    for (const k of PERSONAL_KEYS) {
+      try { localStorage.removeItem(k) } catch { /* приватный режим */ }
+    }
+
+    // Запрос к Supabase и пауза идут параллельно: если ждать их по очереди,
+    // экран висит две секунды плюс время сети — получалось около трёх.
+    await Promise.all([
+      sleep(2000),
+      auth.signOut().catch(() => { /* сессии может уже не быть — выходим всё равно */ }),
+    ])
+    navigate('/')
+    setLoggingOut(false)
+    say(t.au_logout_done)
+  }
+
   const addToCart = (p, size, color = 'black', from, opts = {}) => {
     const fit = opts.fit ?? 'classic'
     const add = Math.max(1, opts.qty ?? 1)
@@ -1143,7 +1182,7 @@ export default function App() {
           {openAccount && (
             <Account
               key="account" t={t} lang={lang} orders={orders}
-              auth={auth} onToast={say}
+              auth={auth} onToast={say} onLogout={logout}
               onClose={() => setOpenAccount(false)}
             />
           )}
@@ -1179,6 +1218,21 @@ export default function App() {
       {/* ── экран «оплачено» поверх страницы ── */}
       <AnimatePresence>
         {paid && <PaidScreen key="paid" t={t} paid={paid} onSkip={skipPaid} />}
+      </AnimatePresence>
+
+      {/* ── экран выхода ── */}
+      <AnimatePresence>
+        {loggingOut && (
+          <motion.div
+            key="logout" className="leaving"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <span className="leaving-spin" aria-hidden="true" />
+            <b>{t.au_logout_wait}</b>
+            <span className="muted">{t.au_logout_hint}</span>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* ── копии товара, летящие в корзину ── */}

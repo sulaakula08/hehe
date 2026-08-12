@@ -1530,3 +1530,22 @@ a { color: inherit; text-decoration: none; }
   .city-list { max-height: 232px; }
   .city-list button { padding: 11px; font-size: 16px; }
 }
+
+/* ── экран выхода ── */
+.leaving {
+  position: fixed; inset: 0; z-index: 90;
+  background: var(--paper);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  padding: 24px; text-align: center;
+}
+.leaving b { font-family: 'Montserrat'; font-size: 22px; }
+.leaving .muted { font-size: 14px; max-width: 300px; }
+.leaving-spin {
+  width: 46px; height: 46px; border-radius: 50%;
+  border: 4px solid var(--tint); border-top-color: var(--hot);
+  animation: leaving-spin .8s linear infinite;
+}
+@keyframes leaving-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .leaving-spin { animation-duration: 2.4s; }
+}

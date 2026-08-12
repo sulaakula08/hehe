@@ -9,7 +9,7 @@ import CityInput from './CityInput.jsx'
  * Личный кабинет без регистрации: только история заказов этого браузера.
  * Кошелёк и коины временно убраны, избранное живёт отдельной страницей.
  */
-export default function Account({ t, lang, orders, onClose, auth, onToast }) {
+export default function Account({ t, lang, orders, onClose, auth, onToast, onLogout }) {
   const user = auth?.user
   // Профиль правим в локальном состоянии и сохраняем кнопкой — иначе каждый
   // введённый символ уходил бы запросом в базу.
@@ -83,7 +83,7 @@ export default function Account({ t, lang, orders, onClose, auth, onToast }) {
               <button className="btn btn-solid" onClick={save} disabled={busy}>
                 {busy ? t.processing : t.au_save}
               </button>
-              <button className="btn" onClick={() => { auth.signOut(); onClose() }}>
+              <button className="btn" onClick={onLogout}>
                 {t.au_logout}
               </button>
             </div>
