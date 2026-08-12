@@ -1504,3 +1504,29 @@ a { color: inherit; text-decoration: none; }
 }
 .acc-form input:focus { outline: 3px solid var(--acid); outline-offset: 1px; }
 @media (max-width: 420px) { .acc-form { grid-template-columns: 1fr; } }
+
+/* ── подсказка города ──
+   Список выпадает поверх соседних полей, поэтому у обёртки свой контекст
+   наложения, а у самого списка — заметный z-index. */
+.city { position: relative; z-index: 2; }
+.city input { width: 100%; }
+.city-list {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 40;
+  list-style: none; margin: 0; padding: 6px;
+  max-height: 268px; overflow-y: auto;
+  background: var(--surface); border: var(--line); border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+.city-list button {
+  display: flex; align-items: baseline; gap: 1px; width: 100%; text-align: left;
+  border: 0; background: none; cursor: pointer; color: var(--ink);
+  font-family: inherit; font-size: 15px; padding: 9px 11px; border-radius: 10px;
+}
+.city-list button b { font-weight: 700; }
+.city-list button span { opacity: .5; font-size: 13.5px; }
+.city-list button.on { background: var(--acid); color: var(--on-acid); }
+.city-list button.on span { opacity: .65; }
+@media (max-width: 620px) {
+  .city-list { max-height: 232px; }
+  .city-list button { padding: 11px; font-size: 16px; }
+}

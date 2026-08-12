@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import Icon from './Icon.jsx'
 import PhoneInput from './PhoneInput.jsx'
 import { fmt } from '../data.js'
+import CityInput from './CityInput.jsx'
 
 /**
  * Личный кабинет без регистрации: только история заказов этого браузера.
@@ -70,7 +71,10 @@ export default function Account({ t, lang, orders, onClose, auth, onToast }) {
               <label className="afield"><span>Telegram</span>
                 <input placeholder="@ник" value={form.telegram} onChange={set('telegram')} /></label>
               <label className="afield"><span>{t.f_city}</span>
-                <input value={form.city} onChange={set('city')} /></label>
+                <CityInput
+                  value={form.city} lang={lang} t={t}
+                  onValue={(v) => setForm((f) => ({ ...f, city: v }))}
+                /></label>
               <label className="afield wide"><span>{t.address_title}</span>
                 <input value={form.address} onChange={set('address')} /></label>
             </div>

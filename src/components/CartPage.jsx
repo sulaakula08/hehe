@@ -3,6 +3,7 @@ import Tshirt from './Tshirt.jsx'
 import Icon from './Icon.jsx'
 import Card from './Card.jsx'
 import PhoneInput from './PhoneInput.jsx'
+import CityInput from './CityInput.jsx'
 import { fmt } from '../data.js'
 
 /**
@@ -132,7 +133,10 @@ export default function CartPage({
             </p>
 
             <label className="afield"><span>{t.f_city}</span>
-              <input value={customer.city} onChange={set('city')} /></label>
+              <CityInput
+                value={customer.city} lang={lang} t={t}
+                onValue={(v) => setCustomer((c) => ({ ...c, city: v }))}
+              /></label>
             <label className="afield"><span>{t.address_title}</span>
               <input value={customer.address} onChange={set('address')} /></label>
             <label className="afield"><span>{t.comment_title}</span>
