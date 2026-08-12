@@ -11,16 +11,21 @@ export default function Account({ t, lang, orders, onClose, auth, onToast }) {
   const user = auth?.user
   // Профиль правим в локальном состоянии и сохраняем кнопкой — иначе каждый
   // введённый символ уходил бы запросом в базу.
-  const [form, setForm] = useState({ name: '', phone: '' })
+  const FIELDS = ['name', 'phone', 'whatsapp', 'telegram', 'city', 'address']
+  const [form, setForm] = useState(() => Object.fromEntries(FIELDS.map((f) => [f, ''])))
   const [busy, setBusy] = useState(false)
+  const p = auth?.profile
   useEffect(() => {
-    setForm({ name: auth?.profile?.name || '', phone: auth?.profile?.phone || '' })
-  }, [auth?.profile?.id, auth?.profile?.name, auth?.profile?.phone])
+    setForm(Object.fromEntries(FIELDS.map((f) => [f, p?.[f] || ''])))
+    // Пересобираем, когда профиль подгрузился или сменился аккаунт.
+  }, [p?.id, p?.name, p?.phone, p?.whatsapp, p?.telegram, p?.city, p?.address])
+
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
   const save = async () => {
     setBusy(true)
     try {
-      await auth.saveProfile({ name: form.name.trim(), phone: form.phone.trim() })
+      await auth.saveProfile(Object.fromEntries(FIELDS.map((f) => [f, form[f].trim()])))
       onToast?.(t.au_saved)
     } catch (e) {
       onToast?.(t[e.message] || t.au_generic)
@@ -51,16 +56,21 @@ export default function Account({ t, lang, orders, onClose, auth, onToast }) {
               </div>
             </div>
 
-            <label className="afield">
-              <span>{t.au_name}</span>
-              <input value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-            </label>
-            <label className="afield">
-              <span>{t.f_phone}</span>
-              <input inputMode="tel" value={form.phone}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
-            </label>
+            <p className="muted small">{t.au_profile}</p>
+            <div className="acc-form">
+              <label className="afield"><span>{t.au_name}</span>
+                <input value={form.name} onChange={set('name')} /></label>
+              <label className="afield"><span>{t.f_phone}</span>
+                <input inputMode="tel" value={form.phone} onChange={set('phone')} /></label>
+              <label className="afield"><span>WhatsApp</span>
+                <input inputMode="tel" placeholder="+7…" value={form.whatsapp} onChange={set('whatsapp')} /></label>
+              <label className="afield"><span>Telegram</span>
+                <input placeholder="@ник" value={form.telegram} onChange={set('telegram')} /></label>
+              <label className="afield"><span>{t.f_city}</span>
+                <input value={form.city} onChange={set('city')} /></label>
+              <label className="afield wide"><span>{t.address_title}</span>
+                <input value={form.address} onChange={set('address')} /></label>
+            </div>
 
             <div className="d-row">
               <button className="btn btn-solid" onClick={save} disabled={busy}>

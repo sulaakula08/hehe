@@ -231,6 +231,10 @@ function HelpWidget({ t }) {
 
 /* ─────────────── приложение ─────────────── */
 export default function App() {
+  // Объявляем первым: на auth завязаны эффекты ниже, а до объявления
+  // обращаться к const нельзя — получали «Cannot access before initialization».
+  const auth = useAuth()
+
   const [lang, setLang] = useState(() => load('hehe.lang', 'ru'))
   const [theme, setTheme] = useState(() => load('hehe.theme', null)
     ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
@@ -354,6 +358,20 @@ export default function App() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  // Вошёл — подставляем сохранённые данные в форму заказа. Заполняем только
+  // пустые поля: то, что человек уже набрал руками, не перетираем.
+  useEffect(() => {
+    const p = auth.profile
+    if (!p) return
+    setCustomer((c) => {
+      const next = { ...c }
+      for (const f of ['name', 'phone', 'whatsapp', 'telegram', 'city', 'address']) {
+        if (!String(next[f] ?? '').trim() && p[f]) next[f] = p[f]
+      }
+      return next
+    })
+  }, [auth.profile])
 
   const { scrollYProgress } = useScroll()
   const bar = useSpring(scrollYProgress, { stiffness: 120, damping: 24 })
@@ -482,6 +500,20 @@ export default function App() {
 
     setOrders((o) => [order, ...o])
 
+    // Данные из оформления запоминаем в профиле, чтобы в следующий раз
+    // форма заполнилась сама. Ошибку глотаем: заказ уже оформлен, ронять
+    // из-за неудачной записи профиля нечестно.
+    if (auth.user) {
+      auth.saveProfile({
+        name: customer.name?.trim() || null,
+        phone: customer.phone?.trim() || null,
+        whatsapp: customer.whatsapp?.trim() || null,
+        telegram: customer.telegram?.trim() || null,
+        city: customer.city?.trim() || null,
+        address: customer.address?.trim() || null,
+      }).catch(() => {})
+    }
+
     // Порядок важен. Сначала наплывает экран «оплачено», и только под ним
     // чистим корзину: очистка на виду схлопывает форму и итоги разом, страница
     // дёргается. Под непрозрачным экраном этого не видно.
@@ -543,8 +575,6 @@ export default function App() {
   const page = PAGES[route]
   // Парящая футболка на главной сменяется сама — витрина не выглядит статичной.
   // Секунда на кадр читается как мигание, поэтому держим ~2.2 с.
-  const auth = useAuth()
-
   const [heroIdx, setHeroIdx] = useState(0)
   const [heroHeld, setHeroHeld] = useState(false)
   useEffect(() => {
