@@ -4,8 +4,17 @@ import { createClient } from '@supabase/supabase-js'
  * Клиент Supabase. Без ключей сайт работает как раньше, на localStorage —
  * витрину можно открыть и без базы, просто без входа в аккаунт.
  */
-const URL = import.meta.env.VITE_SUPABASE_URL
-const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+/**
+ * В настройках проекта на виду лежит адрес REST-эндпоинта
+ * (…supabase.co/rest/v1/), и его легко скопировать вместо адреса проекта.
+ * Библиотека сама дописывает /rest/v1 и /auth/v1, поэтому лишний хвост
+ * ломает вообще все запросы. Отрезаем его молча.
+ */
+const normalizeUrl = (raw) =>
+  (raw || '').trim().replace(/\/+$/, '').replace(/\/(rest|auth|storage)\/v1$/, '')
+
+const URL = normalizeUrl(import.meta.env.VITE_SUPABASE_URL)
+const KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
 
 export const supabaseReady = Boolean(URL && KEY)
 
