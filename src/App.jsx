@@ -17,6 +17,7 @@ import FavoritesPage from './components/FavoritesPage.jsx'
 import HeroTee from './components/HeroTee.jsx'
 import AuthPage from './components/AuthPage.jsx'
 import { useAuth } from './lib/useAuth.js'
+import { phoneDigits } from './components/PhoneInput.jsx'
 import { PRODUCTS, MARKETS, SIZES, SIZE_EXTRA, FIT_EXTRA, FITS, CATALOG_VER, T, fmt, DEFAULT_SETTINGS, COLLECTIONS, CONTACTS } from './data.js'
 
 const load = (k, d) => {
@@ -478,7 +479,8 @@ export default function App() {
   /** Оплата пока фейковая: карта всегда проходит, кошелёк проверяет баланс. */
   const checkout = async () => {
     if (!cart.length || paying) return
-    if (!customer.name.trim() || !customer.phone.trim()) return say(t.fill_ship)
+    // Считаем цифры, а не длину строки: «+7» — это ещё не телефон.
+    if (!customer.name.trim() || phoneDigits(customer.phone).length < 10) return say(t.fill_ship)
 
     setPaying(true)
     say(t.authorizing)

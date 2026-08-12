@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Icon from './Icon.jsx'
+import PhoneInput from './PhoneInput.jsx'
 import { fmt } from '../data.js'
 
 /**
@@ -61,9 +62,11 @@ export default function Account({ t, lang, orders, onClose, auth, onToast }) {
               <label className="afield"><span>{t.au_name}</span>
                 <input value={form.name} onChange={set('name')} /></label>
               <label className="afield"><span>{t.f_phone}</span>
-                <input inputMode="tel" value={form.phone} onChange={set('phone')} /></label>
+                <PhoneInput value={form.phone}
+                  onValue={(v) => setForm((f) => ({ ...f, phone: v }))} /></label>
               <label className="afield"><span>WhatsApp</span>
-                <input inputMode="tel" placeholder="+7…" value={form.whatsapp} onChange={set('whatsapp')} /></label>
+                <PhoneInput value={form.whatsapp}
+                  onValue={(v) => setForm((f) => ({ ...f, whatsapp: v }))} /></label>
               <label className="afield"><span>Telegram</span>
                 <input placeholder="@ник" value={form.telegram} onChange={set('telegram')} /></label>
               <label className="afield"><span>{t.f_city}</span>

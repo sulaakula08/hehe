@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import Tshirt from './Tshirt.jsx'
 import Icon from './Icon.jsx'
 import Card from './Card.jsx'
+import PhoneInput from './PhoneInput.jsx'
 import { fmt } from '../data.js'
 
 /**
@@ -93,9 +94,11 @@ export default function CartPage({
               <label className="afield"><span>{t.f_name}</span>
                 <input value={customer.name} onChange={set('name')} /></label>
               <label className="afield"><span>{t.f_phone}</span>
-                <input inputMode="tel" value={customer.phone} onChange={set('phone')} /></label>
+                <PhoneInput value={customer.phone}
+                  onValue={(v) => setCustomer((c) => ({ ...c, phone: v }))} /></label>
               <label className="afield"><span>WhatsApp</span>
-                <input inputMode="tel" placeholder="+7…" value={customer.whatsapp || ''} onChange={set('whatsapp')} /></label>
+                <PhoneInput value={customer.whatsapp || ''}
+                  onValue={(v) => setCustomer((c) => ({ ...c, whatsapp: v }))} /></label>
               <label className="afield"><span>Telegram</span>
                 <input placeholder="@ник" value={customer.telegram || ''} onChange={set('telegram')} /></label>
             </div>
